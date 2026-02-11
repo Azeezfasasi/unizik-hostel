@@ -85,7 +85,7 @@ export default function HomeAbout() {
 
           <a
             href={section.button?.href || defaultSection.button.href}
-            className="inline-block bg-gradient-to-tr from-red-500 to-green-500 text-white px-6 py-3 rounded-lg shadow hover:bg-red-800 transition"
+            className="inline-block bg-gradient-to-tr from-red-500 to-blue-500 text-white px-6 py-3 rounded-lg shadow hover:bg-red-800 transition"
           >
             {section.button?.label || defaultSection.button.label}
           </a>

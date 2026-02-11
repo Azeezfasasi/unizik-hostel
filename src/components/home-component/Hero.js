@@ -152,8 +152,8 @@ export default function Hero() {
                       <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-4">{s.title}</h2>
                       <p className="text-gray-300 mb-6">{s.subtitle}</p>
                       <div className="flex gap-3">
-                        <Link href={s.cta.href} className="inline-block px-2 md:px-5 py-3 bg-green-700 text-white rounded-md font-medium">{s.cta.label}</Link>
-                        <Link href="/about-us" className="inline-block px-2 md:px-5 py-3 border border-green-600 rounded-md font-medium text-gray-300">Learn More</Link>
+                        <Link href={s.cta.href} className="inline-block px-2 md:px-5 py-3 bg-red-500 text-white rounded-md font-medium">{s.cta.label}</Link>
+                        <Link href="/about-us" className="inline-block px-2 md:px-5 py-3 border border-white rounded-md font-medium text-gray-300">Login</Link>
                       </div>
                     </div>
                     {/* Right Image - visible on lg (laptop) and up only */}

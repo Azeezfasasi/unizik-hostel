@@ -118,7 +118,7 @@ export default function TestimonialsSection() {
         <div className="text-center mt-12">
           <a
             href="/join-us"
-            className="inline-block bg-green-700 text-white px-8 py-3 rounded-lg shadow hover:bg-green-800 transition"
+            className="inline-block bg-blue-500 text-white px-8 py-3 rounded-lg shadow hover:bg-blue-800 transition"
           >
             Join Our Community
           </a>
