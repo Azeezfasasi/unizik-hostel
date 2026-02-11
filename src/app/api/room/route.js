@@ -1,14 +1,12 @@
 import { authenticate } from '@/app/server/middleware/auth.js';
 import { getRooms, createRoom } from '@/app/server/controllers/roomController.js';
 
-// GET /api/room - Get all rooms
+// GET /api/room - Get all rooms (public access)
 export async function GET(req) {
-  return authenticate(req, async () => {
-    return getRooms(req);
-  });
+  return getRooms(req);
 }
 
-// POST /api/room - Create new room
+// POST /api/room - Create new room (requires authentication)
 export async function POST(req) {
   return authenticate(req, async () => {
     return createRoom(req);

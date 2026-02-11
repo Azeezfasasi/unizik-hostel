@@ -26,7 +26,7 @@ export async function uploadToCloudinary(buffer, fileName, folder) {
       uploadOptions,
       (error, result) => {
         if (error) return reject(error);
-        resolve(result);
+        resolve(result.secure_url);
       }
     ).end(buffer);
   });

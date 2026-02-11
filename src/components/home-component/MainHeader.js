@@ -40,7 +40,7 @@ export default function MainHeader() {
     { href: '/', label: 'Home' },
     // { href: '/about-us', label: 'About Us' },
     // { href: '/membership', label: 'Membership' },
-    // { href: '/join-us', label: 'Join Us' },
+    { href: '/check-availability', label: 'Check Availabily' },
     { href: '/blog', label: 'Blog' },
     // { href: '/donate', label: 'Donate' },
     { href: '/contact-us', label: 'Contact Us' }
@@ -145,7 +145,6 @@ export default function MainHeader() {
                 const submenu = [
                   { href: '/about-us', label: 'About Us' },
                   { href: '/gallery', label: 'Gallery' },
-                  { href: '/leadership', label: 'Our Leadership' },
                 ]
 
                 return (
@@ -255,7 +254,7 @@ export default function MainHeader() {
             ) : (
               <>
                 <Link href="/login" className="px-4 py-2 text-sm font-semibold border border-green-700 hover:border-blue-800 text-gray-900 hover:text-blue-950 rounded-md">Login</Link>
-                <Link href="/join-us" className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-red-700">Join Us</Link>
+                <Link href="/check-availability" className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-red-700">Check Availability</Link>
               </>
             )}
           </div>
@@ -375,7 +374,7 @@ export default function MainHeader() {
               ) : (
                 <>
                   <Link href="/login" onClick={() => setOpen(false)} className="block text-center text-gray-700 border border-green-700 rounded-md px-4 py-2 hover:text-green-700">Login</Link>
-                  <Link href="/join-us" onClick={() => setOpen(false)} className="block bg-green-700 text-white px-4 py-2 rounded-md text-center">Join Us</Link>
+                  <Link href="/check-availability" onClick={() => setOpen(false)} className="block bg-green-700 text-white px-4 py-2 rounded-md text-center">Check Availability</Link>
                 </>
               )}
             </div>

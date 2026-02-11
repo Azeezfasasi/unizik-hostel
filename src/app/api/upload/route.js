@@ -51,7 +51,10 @@ export async function POST(request) {
       );
     }
 
-    const secure_url = await uploadToCloudinary(file, folder);
+    // Convert File to Buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    const secure_url = await uploadToCloudinary(buffer, file.name, folder);
 
     return new Response(
       JSON.stringify({
