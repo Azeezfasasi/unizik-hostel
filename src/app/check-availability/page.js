@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Building2,
   DoorOpen,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export default function CheckAvailability() {
+  const router = useRouter();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -306,7 +308,10 @@ export default function CheckAvailability() {
                       </div>
 
                       {/* Action Button */}
-                      <button className="w-full mt-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 transition active:scale-95 text-sm">
+                      <button 
+                        onClick={() => router.push('/login')}
+                        className="w-full mt-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 transition active:scale-95 text-sm"
+                      >
                         Request This Room
                       </button>
                     </div>
