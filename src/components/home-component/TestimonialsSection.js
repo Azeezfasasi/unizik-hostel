@@ -8,27 +8,27 @@ const defaultTestimonials = [
   {
     id: 1,
     name: "Chisom Obi",
-    position: "Community Member & Youth Leader",
+    position: "Students",
     message:
-      "CANAN USA has transformed my faith journey and connected me with an incredible community. Through their youth programs and advocacy work, I've found purpose and meaningful ways to serve others while celebrating my Nigerian heritage.",
+      "Unizik Hostel has been a blessing to our community. Their dedication to providing safe and affordable housing for students and visitors is truly commendable. I've seen firsthand how they create a supportive environment that fosters growth and connection among residents.",
     rating: 5,
     isActive: true,
   },
   {
     id: 2,
     name: "Dr. Ngozi Uwazie",
-    position: "Education & Scholarship Advocate",
+    position: "Students",
     message:
-      "The organization's commitment to education and empowerment is remarkable. I've witnessed firsthand how CANAN USA is making a real difference in the lives of Nigerian-American students and families across the country.",
+      "The organization's commitment to education and empowerment is remarkable. I've witnessed firsthand how UNIZIK Hostel is making a real difference in the lives of Nigerian students and families across the country.",
     rating: 5,
     isActive: true,
   },
   {
     id: 3,
     name: "Pastor Emeka Nwosu",
-    position: "Religious Leader & Community Partner",
+    position: "Students",
     message:
-      "CANAN USA's faith-centered approach to advocacy and community service is inspiring. Their dedication to defending persecuted Christians and strengthening our communities demonstrates the true spirit of Christian service and justice.",
+      "UNIZIK Hostel is a shining example of how faith and community can come together to create positive change. Their dedication to providing safe and affordable housing for students and visitors is truly commendable.",
     rating: 5,
     isActive: true,
   },
@@ -80,7 +80,7 @@ export default function TestimonialsSection() {
             What Our Community Members Say
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Hear from members, leaders, and partners who have experienced the impact of CANAN USA's faith-centered mission and community initiatives.
+            Hear from members, leaders, and partners who have experienced the impact of UNIZIK Hostel's housing and community initiatives.
           </p>
         </div>
 

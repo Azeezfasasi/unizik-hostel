@@ -258,7 +258,7 @@ export default function WelcomeCTA() {
                     name="title"
                     value={formData.title}
                     onChange={handleFormChange}
-                    placeholder="e.g., About CANAN USA"
+                    placeholder="e.g., About Unizik Hostel"
                     maxLength={200}
                     className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />

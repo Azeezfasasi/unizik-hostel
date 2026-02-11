@@ -631,7 +631,7 @@ export default function DonationForm() {
           <div className="bg-white rounded-lg p-6 shadow">
             <h4 className="font-semibold text-gray-900 mb-2">Trusted Organization</h4>
             <p className="text-gray-600 text-sm">
-              CANAN USA is a verified organization committed to transparency and accountability.
+              UNIZIK Hostel is a registered non-profit with a proven track record of impact and transparency
             </p>
           </div>
           <div className="bg-white rounded-lg p-6 shadow">

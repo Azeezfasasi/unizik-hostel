@@ -182,7 +182,7 @@ export default function JoinUs() {
           <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-12 text-center">
             <CheckCircle className="mx-auto h-16 w-16 text-green-600 mb-6" />
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Welcome to CANAN USA!
+              Welcome to UNIZIK Hostel!
             </h1>
             <p className="text-gray-600 text-lg mb-6">
               Thank you for submitting your membership application. We have received your information and will review it shortly.
@@ -218,7 +218,7 @@ export default function JoinUs() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            Join CANAN USA
+            Join UNIZIK Hostel
           </h1>
           <p className="text-gray-600 text-lg">
             Become part of our vibrant Nigerian-American Christian community
@@ -548,12 +548,12 @@ export default function JoinUs() {
                     <Target className="w-6 h-6 text-blue-900" />
                     Your Motivation
                   </h2>
-                  <p className="text-gray-600">Tell us why you want to join CANAN USA</p>
+                  <p className="text-gray-600">Tell us why you want to join UNIZIK Hostel</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Why do you want to join CANAN USA? *
+                    Why do you want to join UNIZIK Hostel? *
                   </label>
                   <textarea
                     name="motivation"
@@ -652,7 +652,7 @@ export default function JoinUs() {
                         I agree to the Terms and Conditions
                       </p>
                       <p className="text-sm text-gray-600">
-                        I have read and agree to CANAN USA's membership terms, code of conduct, and organizational values centered on faith, justice, and community service.
+                        I have read and agree to UNIZIK Hostel's membership terms, code of conduct, and organizational values centered on faith, justice, and community service.
                       </p>
                     </div>
                   </label>
@@ -671,7 +671,7 @@ export default function JoinUs() {
                         I consent to be contacted
                       </p>
                       <p className="text-sm text-gray-600">
-                        I agree to be contacted by CANAN USA via email and phone regarding my membership application and community updates.
+                        I agree to be contacted by UNIZIK Hostel via email and phone regarding my membership application and community updates.
                       </p>
                     </div>
                   </label>

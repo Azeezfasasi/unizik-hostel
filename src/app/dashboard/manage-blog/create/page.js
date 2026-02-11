@@ -4,7 +4,7 @@ import AddBlogPage from '@/app/dashboard/add-blog/page'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 export const metadata = {
-  title: 'Create Blog Post | CANAN USA',
+  title: 'Create Blog Post | UNIZIK Hostel',
   description: 'Create and publish new blog posts to share updates and insights with your audience.',
 }
 

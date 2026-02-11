@@ -19,7 +19,7 @@ import {
 
 export default function RequestRoomPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,9 +38,10 @@ export default function RequestRoomPage() {
     const fetchRooms = async () => {
       try {
         setLoading(true);
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
         const [roomsRes, requestsRes] = await Promise.all([
-          fetch('/api/room'),
-          fetch('/api/room/requests?my=true'),
+          fetch('/api/room', { headers }),
+          fetch('/api/room/requests?my=true', { headers }),
         ]);
 
         const roomsData = await roomsRes.json();

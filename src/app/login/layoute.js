@@ -1,20 +1,20 @@
 export const metadata = {
-  title: 'Login | CANAN USA',
-  description: 'Learn more about our company, values, team, and what makes us different.',
+  title: 'Login | UNIZIK Hostel',
+  description: 'Learn more about our hostel login process, authentication, and how to access your account securely.',
   keywords: ['login', 'authentication', 'user access', 'sign in'],
   openGraph: {
-    title: 'Login | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Login | UNIZIK Hostel',
+    description: 'Learn more about our hostel login process, authentication, and how to access your account securely.',
     type: 'website',
-    url: 'https://cananusa.com/login',
+    url: 'https://unizikhostel.com/login',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Login | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Login | UNIZIK Hostel',
+    description: 'Learn more about our hostel login process, authentication, and how to access your account securely.',
   },
   robots: 'index, follow',
-  canonical: 'https://cananusa.com/login',
+  canonical: 'https://unizikhostel.com/login',
 }
 
 export default function LoginLayout({ children }) {

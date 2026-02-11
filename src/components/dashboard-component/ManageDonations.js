@@ -176,7 +176,7 @@ export default function ManageDonations() {
             <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Donations Management</h1>
           </div>
           <p className="text-sm sm:text-base text-gray-600">
-            Manage and track all donations received by CANAN USA
+            Manage and track all donations received by UNIZIK Hostel. View details, update statuses, and export data for reporting.
           </p>
         </div>
 

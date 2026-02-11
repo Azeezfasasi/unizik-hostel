@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Company Overview | CANAN USA',
+  title: 'Company Overview | UNIZIK Hostel',
   description: 'View company overview information. Manage and showcase your company details with ease using our intuitive interface.',
 }
 

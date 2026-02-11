@@ -20,7 +20,7 @@ const logoSchema = new mongoose.Schema(
     },
     alt: {
       type: String,
-      default: 'CANAN USA Logo',
+      default: 'UNIZIK Hostel Logo',
     },
     isActive: {
       type: Boolean,

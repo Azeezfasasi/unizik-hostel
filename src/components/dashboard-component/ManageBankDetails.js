@@ -217,7 +217,7 @@ export default function ManageBankDetails() {
                     name="accountName"
                     value={formData.accountName}
                     onChange={handleChange}
-                    placeholder="e.g., CANAN USA Inc."
+                    placeholder="e.g., UNIZIK Hostel Admin."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   />
                 </div>
@@ -363,7 +363,7 @@ export default function ManageBankDetails() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="e.g., donations@cananusa.org"
+                    placeholder="e.g., donations@unizikhostel.org"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   />
                 </div>
@@ -394,7 +394,7 @@ export default function ManageBankDetails() {
                   name="website"
                   value={formData.website}
                   onChange={handleChange}
-                  placeholder="e.g., https://cananusa.org"
+                  placeholder="e.g., https://unizikhostel.org"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                 />
               </div>

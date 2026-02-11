@@ -87,11 +87,11 @@ const campaignSchema = new mongoose.Schema({
   },
   senderEmail: {
     type: String,
-    default: process.env.NEWSLETTER_FROM_EMAIL || 'noreply@cananusa.net',
+    default: process.env.NEWSLETTER_FROM_EMAIL || 'noreply@unizikhostel.com',
   },
   senderName: {
     type: String,
-    default: 'CANAN USA',
+    default: 'UNIZIK Hostel',
   },
   recipients: {
     type: {

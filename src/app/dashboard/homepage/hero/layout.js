@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Hero Slider | CANAN USA',
+  title: 'Hero Slider | UNIZIK Hostel',
   description: 'Manage and showcase your hero slider content with ease using our intuitive interface.',
 }
 

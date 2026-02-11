@@ -111,13 +111,13 @@ export const sendApplicationConfirmation = async (memberData) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Welcome to CANAN USA</h1>
+          <h1>Welcome to UNIZIK Hostel</h1>
         </div>
         
         <div class="content">
           <p>Hi ${memberData.firstName} ${memberData.lastName},</p>
           
-          <p>Thank you for submitting your membership application to CANAN USA! We are excited about the possibility of having you join our vibrant Nigerian-American Christian community.</p>
+          <p>Thank you for submitting your membership application to UNIZIK Hostel! We are excited about the possibility of having you join our vibrant Nigerian-American Christian community.</p>
           
           <div class="info-box">
             <h3>Application Received</h3>
@@ -141,11 +141,11 @@ export const sendApplicationConfirmation = async (memberData) => {
           
           <p>If you have any questions in the meantime, please don't hesitate to reach out to us at ${BREVO_SENDER_EMAIL}.</p>
           
-          <p>Best regards,<br><strong>CANAN USA Team</strong></p>
+          <p>Best regards,<br><strong>UNIZIK Hostel Team</strong></p>
         </div>
         
         <div class="footer">
-          <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+          <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -154,7 +154,7 @@ export const sendApplicationConfirmation = async (memberData) => {
 
   return sendEmail({
     to: memberData.email,
-    subject: 'CANAN USA - Application Received',
+    subject: 'UNIZIK Hostel - Application Received',
     htmlContent,
   });
 };
@@ -208,7 +208,7 @@ export const sendStatusChangeNotification = async (memberData, newStatus) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>CANAN USA - Application Status Update</h1>
+          <h1>UNIZIK Hostel - Application Status Update</h1>
         </div>
         
         <div class="content">
@@ -222,13 +222,13 @@ export const sendStatusChangeNotification = async (memberData, newStatus) => {
             ${memberData.adminNotes ? `<p><strong>Notes:</strong> ${memberData.adminNotes}</p>` : ''}
           </div>
           
-          <p>Thank you for your continued interest in CANAN USA. If you have any questions about your application or need more information, please contact us at ${BREVO_SENDER_EMAIL}.</p>
+          <p>Thank you for your continued interest in UNIZIK Hostel. If you have any questions about your application or need more information, please contact us at ${BREVO_SENDER_EMAIL}.</p>
           
-          <p>Best regards,<br><strong>CANAN USA Team</strong></p>
+          <p>Best regards,<br><strong>UNIZIK Hostel Team</strong></p>
         </div>
         
         <div class="footer">
-          <p>&copy; 2024 CANAN USA. All rights reserved.</p>
+          <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -237,7 +237,7 @@ export const sendStatusChangeNotification = async (memberData, newStatus) => {
 
   return sendEmail({
     to: memberData.email,
-    subject: `CANAN USA - Application Status: ${statusLabels[newStatus]}`,
+    subject: `UNIZIK Hostel - Application Status: ${statusLabels[newStatus]}`,
     htmlContent,
   });
 };
@@ -262,7 +262,7 @@ export const sendAdminReply = async (memberData) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Message from CANAN USA</h1>
+          <h1>Message from UNIZIK Hostel</h1>
         </div>
         
         <div class="content">
@@ -276,11 +276,11 @@ export const sendAdminReply = async (memberData) => {
           
           <p>If you have any questions or need further assistance, please don't hesitate to reach out to us at ${BREVO_SENDER_EMAIL}.</p>
           
-          <p>Best regards,<br><strong>CANAN USA Team</strong></p>
+          <p>Best regards,<br><strong>UNIZIK Hostel Team</strong></p>
         </div>
         
         <div class="footer">
-          <p>&copy; 2024 CANAN USA. All rights reserved.</p>
+          <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -289,7 +289,7 @@ export const sendAdminReply = async (memberData) => {
 
   return sendEmail({
     to: memberData.email,
-    subject: 'CANAN USA - Response to Your Application',
+    subject: 'UNIZIK Hostel - Response to Your Application',
     htmlContent,
   });
 };
@@ -370,7 +370,7 @@ export const sendAdminNotification = async (memberData) => {
         </div>
         
         <div class="footer">
-          <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+          <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -462,7 +462,7 @@ export const sendAdminUpdateNotification = async (memberData, updateType) => {
         </div>
         
         <div class="footer">
-          <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+          <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
         </div>
       </div>
     </body>

@@ -4,8 +4,8 @@ import Footer from '@/components/home-component/Footer'
 import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata = {
-  title: 'The Christian Association of Nigerian- Americans (CANAN USA)',
-  description: 'The Christian Association of Nigerian-Americans (CANAN USA) is a faith-based organization dedicated to fostering spiritual growth, community support, and cultural connection among Nigerian-Americans. We provide a platform for worship, fellowship, and outreach, promoting Christian values and unity within the diaspora.',
+  title: 'UNIZIK Hostel - The hostel with Discipline, Self-Reliance and Excellence',
+  description: 'UNIZIK Hostel is a premier accommodation facility that offers a comfortable and secure living environment for students. With a focus on discipline, self-reliance, and excellence, UNIZIK Hostel provides a supportive community where students can thrive academically and personally. Our hostel is equipped with modern amenities, including spacious rooms, study areas, recreational facilities, and 24/7 security to ensure the well-being of our residents. Join us at UNIZIK Hostel and experience a vibrant and enriching living experience that fosters growth and success.',
   icons: {
     icon: '/canannew.png',
     apple: '/apple-icon.png',

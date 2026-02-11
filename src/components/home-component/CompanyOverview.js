@@ -7,8 +7,7 @@ const defaultOverview = {
   whoWeAre: {
     title: "Who We Are",
     paragraphs: [
-      "The Christian Association of Nigerian-Americans (CANAN USA) is a national Christian advocacy organization dedicated to defending religious freedom, protecting persecuted Christians, and strengthening Nigerian-American communities across the United States.",
-      "We collaborate with churches, civic leaders, human rights organizations, and U.S. policymakers to ensure that the cry of persecuted believers is heard, addressed, and acted upon."
+      "UNIZIK Hostel is a non-profit organization dedicated to advocating for the rights and welfare of persecuted Christians in Nigeria and supporting Nigerian American communities in the United States. We are committed to mobilizing resources, influencing policy, and providing humanitarian aid to protect vulnerable Christians and empower Nigerian Americans to thrive socially, professionally, and spiritually."
     ]
   },
   vision: {
@@ -51,7 +50,7 @@ const defaultOverview = {
   },
   image: {
     url: "/images/placeholder.png",
-    alt: "CANAN USA Overview"
+    alt: "UNIZIK Hostel Overview"
   }
 };
 

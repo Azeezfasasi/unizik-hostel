@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Update Blog Post | CANAN USA',
+  title: 'Update Blog Post | UNIZIK Hostel',
   description: 'Update your blog post with new content and images.',
 }
 

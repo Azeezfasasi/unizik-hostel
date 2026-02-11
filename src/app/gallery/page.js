@@ -2,22 +2,22 @@ import React from 'react'
 import Gallery from '@/components/home-component/Gallery'
 
 export const metadata = {
-  title: 'Gallery | CANAN USA',
-  description: 'Learn more about our company, values, team, and what makes us different. Discover our mission and membership levels.',
+  title: 'Gallery | UNIZIK Hostel',
+  description: 'Explore our gallery showcasing vibrant moments, events, and the lively community at UNIZIK Hostel.',
   keywords: ['gallery', 'community', 'events', 'photos', 'videos'],
   openGraph: {
-    title: 'Gallery | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Gallery | UNIZIK Hostel',
+    description: 'Explore our gallery showcasing vibrant moments, events, and the lively community at UNIZIK Hostel.',
     type: 'website',
-    url: 'https://cananusa.com/gallery',
+    url: 'https://unizikhostel.com/gallery',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Gallery | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Gallery | UNIZIK Hostel',
+    description: 'Explore our gallery showcasing vibrant moments, events, and the lively community at UNIZIK Hostel.',
   },
   robots: 'index, follow',
-  canonical: 'https://cananusa.com/gallery',
+  canonical: 'https://unizikhostel.com/gallery',
 }
 
 export default function GalleryComponent() {

@@ -31,10 +31,10 @@ export default function HomeAbout() {
 
   // Default section fallback
   const defaultSection = {
-    title: 'About CANAN USA',
-    description1: 'The Christian Association of Nigerian-Americans (CANAN USA) is a national Christian advocacy organization dedicated to uniting Nigerian-Americans through faith, culture, and community. We are committed to defending religious freedom, protecting persecuted Christians, and strengthening the spiritual, professional, and social well-being of our members.',
-    description2: 'Founded on the principles of faith-centered leadership, justice, and humanitarian service, CANAN USA mobilizes communities across the United States to advocate for persecuted believers, celebrate Nigerian cultural heritage, and empower Nigerian-Americans to thrive. We collaborate with churches, civic leaders, human rights organizations, and policymakers to ensure that the voices of those in need are heard, addressed, and acted upon.',
-    image: { src: '/images/placeholder.png', alt: 'CANAN USA Community' },
+    title: 'About UNIZIK Hostel',
+    description1: 'UNIZIK Hostel is a dedicated accommodation facility for students and visitors of the University of Nigeria, Nsukka. We provide safe, affordable, and comfortable housing options designed to meet the needs of our community members.',
+    description2: 'Our hostel is committed to creating a supportive environment that fosters academic excellence, personal growth, and social interaction. We ensure that all residents have access to essential amenities and services that enhance their living experience.',
+    image: { src: '/images/placeholder.png', alt: 'UNIZIK Hostel Community' },
     button: { label: 'Learn More', href: '/about-us' }
   }
 

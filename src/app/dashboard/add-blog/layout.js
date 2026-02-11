@@ -1,20 +1,20 @@
 export const metadata = {
-  title: 'Add Blog | CANAN USA',
-  description: 'Learn more about our company, values, team, and what makes us different.',
+  title: 'Add Blog | UNIZIK Hostel',
+  description: 'Create and manage blog posts for UNIZIK Hostel.',
   keywords: ['add blog', 'create blog', 'blog management', 'content creation'],
   openGraph: {
-    title: 'Add Blog | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Add Blog | UNIZIK Hostel',
+    description: 'Create and manage blog posts for UNIZIK Hostel.',
     type: 'website',
-    url: 'https://cananusa.com/about-us',
+    url: 'https://unizikhostel.com/dashboard/add-blog',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Add Blog | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Add Blog | UNIZIK Hostel',
+    description: 'Create and manage blog posts for UNIZIK Hostel.',
   },
   robots: 'index, follow',
-  canonical: 'https://cananusa.com/about-us',
+  canonical: 'https://unizikhostel.com/dashboard/add-blog',
 }
 
 export default function AddBlogLayout({ children }) {

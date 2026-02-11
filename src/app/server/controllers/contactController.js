@@ -43,10 +43,10 @@ export const createContact = async (req) => {
             </div>
             
             <p>We appreciate your interest and will respond within 24-48 hours.</p>
-            <p>Best regards,<br>The CANAN USA Team</p>
+            <p>Best regards,<br>The UNIZIK Hostel Team</p>
           </div>
           <div class="footer">
-            <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+            <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -102,7 +102,7 @@ export const createContact = async (req) => {
               <p>Please log in to your dashboard to view and respond to this contact form.</p>
             </div>
             <div class="footer">
-              <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+              <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -217,7 +217,7 @@ export const replyToContact = async (req, contactId) => {
           </div>
           <div class="content">
             <p>Hi ${contact.name},</p>
-            <p>${senderFullName} from CANAN USA has replied to your contact form regarding "${contact.subject}".</p>
+            <p>${senderFullName} from UNIZIK Hostel has replied to your contact form regarding "${contact.subject}".</p>
             
             <div class="reply-box">
               <p><span class="label">From:</span> ${senderFullName}</p>
@@ -226,10 +226,10 @@ export const replyToContact = async (req, contactId) => {
             </div>
             
             <p>If you have any further questions, please feel free to reach out to us.</p>
-            <p>Best regards,<br>The CANAN USA Team</p>
+            <p>Best regards,<br>The UNIZIK Hostel Team</p>
           </div>
           <div class="footer">
-            <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+            <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -284,7 +284,7 @@ export const replyToContact = async (req, contactId) => {
               <p>Log in to your dashboard to view the full conversation.</p>
             </div>
             <div class="footer">
-              <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+              <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -362,10 +362,10 @@ export const updateContactStatus = async (req, contactId) => {
             </div>
             
             <p>If you have any questions, please feel free to contact us.</p>
-            <p>Best regards,<br>The CANAN USA Team</p>
+            <p>Best regards,<br>The UNIZIK Hostel Team</p>
           </div>
           <div class="footer">
-            <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+            <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -419,7 +419,7 @@ export const updateContactStatus = async (req, contactId) => {
               <p>Log in to your dashboard to view the full details.</p>
             </div>
             <div class="footer">
-              <p>&copy; 2026 CANAN USA. All rights reserved.</p>
+              <p>&copy; 2026 UNIZIK Hostel. All rights reserved.</p>
             </div>
           </div>
         </body>

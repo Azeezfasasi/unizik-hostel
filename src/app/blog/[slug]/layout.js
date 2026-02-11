@@ -1,20 +1,20 @@
 export const metadata = {
-  title: 'Blog | CANAN USA',
-  description: 'Learn more about our company, values, team, and what makes us different. Discover our mission and membership levels.',
+  title: 'Blog | UNIZIK Hostel',
+  description: 'Explore insightful articles and updates from UNIZIK Hostel.',
   keywords: ['about us', 'company', 'team', 'values', 'membership'],
   openGraph: {
-    title: 'Blog | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Blog | UNIZIK Hostel',
+    description: 'Explore insightful articles and updates from UNIZIK Hostel.',
     type: 'website',
-    url: 'https://cananusa.com/blog',
+    url: 'https://unizikhostel.com/blog',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Blog | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Blog | UNIZIK Hostel',
+    description: 'Explore insightful articles and updates from UNIZIK Hostel.',
   },
   robots: 'index, follow',
-  canonical: 'https://cananusa.com/blog',
+  canonical: 'https://unizikhostel.com/blog',
 }
 
 export default function LeadershipLayout({ children }) {

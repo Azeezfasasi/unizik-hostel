@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Subscribers | CANAN USA',
+  title: 'Subscribers | UNIZIK Hostel',
   description: 'Manage your subscribers with ease using our intuitive interface.',
 }
 

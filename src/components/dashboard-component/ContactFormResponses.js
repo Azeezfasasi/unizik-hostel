@@ -471,7 +471,7 @@ const ContactFormResponses = () => {
 							<div className="p-6 space-y-4">
 								<div>
 									<label className="block text-sm font-medium text-gray-700 mb-2">From</label>
-									<p className="text-gray-900">admin@cananusa.net</p>
+									<p className="text-gray-900">admin@unizikhostel.org</p>
 								</div>
 
 								<div>

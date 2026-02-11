@@ -297,7 +297,7 @@ export default function MainHeader() {
                     />
                   </div>
                 ) : (
-                  <Image src="/images/cananusatrans.png" alt="Cananusa Logo" width={100} height={50} className="w-30 block rounded-md" priority />
+                  <Image src="/images/cananusatrans.png" alt="UNIZIK Hostel Logo" width={100} height={50} className="w-30 block rounded-md" priority />
                 )}
               </Link>
               <button onClick={() => setOpen(false)} className="text-red-600 text-2xl font-semibold">✕</button>

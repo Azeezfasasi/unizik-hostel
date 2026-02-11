@@ -32,11 +32,11 @@ export default function ContactUsMain() {
         setContactDetails({
           phone: "(+1) 234-567-890",
           whatsapp: "(+1) 234-567-890",
-          email: "info@cananusa.net",
-          location: "Texas, USA",
+          email: "info@unizikhostel.org",
+          location: "Nigeria",
           latitude: 31.9686,
           longitude: -99.9018,
-          businessHours: "Mon - Fri: 9:00 AM - 5:00 PM",
+          businessHours: "Mon - Fri: 8:00 AM - 5:00 PM",
           facebookUrl: "https://facebook.com",
           linkedinUrl: "https://linkedin.com",
           instagramUrl: "https://instagram.com"
@@ -48,11 +48,11 @@ export default function ContactUsMain() {
       setContactDetails({
         phone: "(+1) 234-567-890",
         whatsapp: "(+1) 234-567-890",
-        email: "info@cananusa.net",
-        location: "Texas, USA",
+        email: "info@unizikhostel.org",
+        location: "Nigeria",
         latitude: 31.9686,
         longitude: -99.9018,
-        businessHours: "Mon - Fri: 9:00 AM - 5:00 PM",
+        businessHours: "Mon - Fri: 8:00 AM - 5:00 PM",
         facebookUrl: "https://facebook.com",
         linkedinUrl: "https://linkedin.com",
         instagramUrl: "https://instagram.com"

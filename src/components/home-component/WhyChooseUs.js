@@ -64,10 +64,10 @@ export default function WhyChooseUs() {
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
-            Why Choose CANAN USA
+            Why Choose Unizik Hostel?
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            We unite Nigerian-Americans through faith, culture, and community—empowering our members to thrive spiritually, professionally, and socially.
+            Discover the unique benefits and values that set Unizik Hostel apart as a trusted provider of safe, affordable, and supportive housing for students and visitors of the University of Nigeria, Nsukka.
           </p>
         </div>
 

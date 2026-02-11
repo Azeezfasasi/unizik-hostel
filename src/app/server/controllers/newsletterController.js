@@ -71,7 +71,7 @@ export const subscribeToNewsletter = async (subscriberData) => {
     try {
       const emailResult = await sendEmailViaBrevo({
         to: email,
-        subject: 'Welcome to CANAN USA Newsletter',
+        subject: 'Welcome to UNIZIK Hostel Newsletter',
         htmlContent: `
           <!DOCTYPE html>
           <html>
@@ -88,11 +88,11 @@ export const subscribeToNewsletter = async (subscriberData) => {
             <body>
               <div class="container">
                 <div class="header">
-                  <h1>Welcome to CANAN USA Newsletter!</h1>
+                  <h1>Welcome to UNIZIK Hostel Newsletter!</h1>
                 </div>
                 <div class="content">
                   <p>Hi ${firstName || 'there'},</p>
-                  <p>Thank you for subscribing to our newsletter! We're excited to share the latest updates, insights, and innovations from CANAN USA.</p>
+                  <p>Thank you for subscribing to our newsletter! We're excited to share the latest updates, insights, and innovations from UNIZIK Hostel.</p>
                   <p>You'll receive:</p>
                   <ul>
                     <li>Latest industry news and trends</li>
@@ -101,21 +101,21 @@ export const subscribeToNewsletter = async (subscriberData) => {
                     <li>Special offers and promotions</li>
                   </ul>
                   <p>If you have any questions or feedback, feel free to reach out to us.</p>
-                  <p>Best regards,<br/>The CANAN USA Team</p>
+                  <p>Best regards,<br/>The UNIZIK Hostel Team</p>
                 </div>
                 <div class="footer">
-                  <p>© 2025 CANAN USA. All rights reserved.</p>
+                  <p>© 2025 UNIZIK Hostel. All rights reserved.</p>
                   <p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/newsletter/unsubscribe?email=${email}">Unsubscribe</a></p>
                 </div>
               </div>
             </body>
           </html>
         `,
-        textContent: `Welcome to CANAN USA Newsletter!
+        textContent: `Welcome to UNIZIK Hostel Newsletter!
 
 Hi ${firstName || 'there'},
 
-Thank you for subscribing to our newsletter! We're excited to share the latest updates, insights, and innovations from CANAN USA.
+Thank you for subscribing to our newsletter! We're excited to share the latest updates, insights, and innovations from UNIZIK Hostel.
 You'll receive:
 - Latest industry news and trends
 - Product updates and announcements
@@ -125,13 +125,13 @@ You'll receive:
 If you have any questions or feedback, feel free to reach out to us.
 
 Best regards,
-The CANAN USA Team
+The UNIZIK Hostel Team
 
 ---
 To unsubscribe: ${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/newsletter/unsubscribe?email=${email}
         `,
-        senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@cananusa.com',
-        senderName: process.env.BREVO_SENDER_NAME || 'CANAN USA',
+        senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@unizikhostel.com',
+        senderName: process.env.BREVO_SENDER_NAME || 'UNIZIK Hostel',
         tags: ['welcome', 'subscription'],
       });
       

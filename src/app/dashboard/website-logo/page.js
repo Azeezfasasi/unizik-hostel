@@ -13,7 +13,7 @@ export default function WebsiteLogo() {
   const [success, setSuccess] = useState('');
   const [width, setWidth] = useState(170);
   const [height, setHeight] = useState(50);
-  const [alt, setAlt] = useState('CANAN USA Logo');
+  const [alt, setAlt] = useState('UNIZIK Hostel Logo');
   const fileInputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 

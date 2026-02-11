@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'All Gallery | CANAN USA',
+  title: 'All Gallery | UNIZIK Hostel',
   description: 'View all images in your gallery. Manage and showcase your collection with ease using our intuitive interface.',
 }
 

@@ -48,7 +48,7 @@ export async function POST(request) {
       publicId,
       width: width || 170,
       height: height || 50,
-      alt: alt || 'CANAN USA Logo',
+      alt: alt || 'UNIZIK Hostel Logo',
       isActive: true,
     });
 

@@ -3,7 +3,7 @@ import ProfileManagement from './components/ProfileManagement'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 export const metadata = {
-  title: 'My Profile | CANAN USA',
+  title: 'My Profile | UNIZIK Hostel',
   description: 'Manage your personal information, account settings, and preferences on your profile page.',
 }
 

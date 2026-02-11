@@ -41,26 +41,19 @@ export default function Hero() {
   // Default slides fallback
   const defaultSlides = [
     {
-      title: 'Unite in Faith, Celebrate Culture!',
-      subtitle: 'Join a vibrant community of Nigerian-Americans united by Christian faith, cultural heritage, and shared values.',
-      cta: { label: 'Join Our Community', href: '/join-us' },
+      title: 'Welcome to UNIZIK Hostel',
+      subtitle: 'Experience safe, affordable, and comfortable accommodation for students and visitors. Join our vibrant community and thrive academically and socially.',
+      cta: { label: 'Check Availability', href: '/check-availability' },
       bg: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 60%)',
-      image: { src: '/images/placeholder.png', alt: 'CANAN USA Community' }
+      image: { src: '/images/placeholder.png', alt: 'UNIZIK Hostel Community' }
     },
     {
-      title: 'Advocate for Religious Freedom',
-      subtitle: 'Together we defend persecuted Christians, amplify their voices, and protect religious freedom worldwide.',
-      cta: { label: 'Our Mission', href: '/about-us' },
+      title: 'Safe & Affordable Accommodation',
+      subtitle: 'Discover our range of safe, affordable, and comfortable housing options designed to meet the needs of students and visitors. Your comfort and security are our top priorities.',
+      cta: { label: 'Login', href: '/login' },
       bg: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
       image: { src: '/images/placeholder.png', alt: 'Religious Advocacy' }
     },
-    {
-      title: 'Empower Your Future',
-      subtitle: 'Access professional networks, cultural events, education programs, and humanitarian opportunities for growth and impact.',
-      cta: { label: 'Membership Levels', href: '/about-us' },
-      bg: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
-      image: { src: '/images/placeholder.png', alt: 'Community Programs' }
-    }
   ]
 
   // Note: index is controlled by setters below (clamped on update); no effect needed here.

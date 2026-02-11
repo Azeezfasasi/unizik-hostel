@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Send Newsletter | CANAN USA',
+  title: 'Send Newsletter | UNIZIK Hostel',
   description: 'Send newsletters to your members with ease using our intuitive interface.',
 }
 

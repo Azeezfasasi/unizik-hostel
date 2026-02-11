@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'All Users | CANAN USA',
+  title: 'All Users | UNIZIK Hostel',
   description: 'View all users in your system. Manage and showcase your user collection with ease using our intuitive interface.',
 }
 

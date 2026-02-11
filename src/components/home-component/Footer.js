@@ -7,9 +7,9 @@ export default function Footer() {
       <div className="container mx-auto px-6 lg:px-20 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10">
         {/* Brand / About */}
         <div>
-          <h3 className="text-white text-xl font-bold mb-4">The Christian Association of Nigerian-Americans (CANAN USA)</h3>
+          <h3 className="text-white text-xl font-bold mb-4">UNIZIK Hostel</h3>
           <p className="text-gray-400 text-sm leading-relaxed mb-6">
-            Uniting Nigerian-Americans through faith, culture, and community. We advocate for religious freedom, protect persecuted Christians, and empower our members to thrive spiritually, professionally, and socially.
+            UNIZIK Hostel is a subsidairy of Nnamdi Azikiwe University, Awka, Nigeria. We are dedicated to providing safe, affordable, and comfortable accommodation for students and visitors. Our mission is to create a welcoming community that fosters academic success and personal growth.
           </p>
 
           {/* Social Links */}
@@ -51,18 +51,18 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/about-us" className="hover:text-white transition">
-                About Us
+              <Link href="/" className="hover:text-white transition">
+                Check Availability
               </Link>
             </li>
             <li>
-              <Link href="/join-us" className="hover:text-white transition">
-                Join Us
+              <Link href="/blog" className="hover:text-white transition">
+                Blog
               </Link>
             </li>
             <li>
               <Link href="/gallery" className="hover:text-white transition">
-                Community Gallery
+                Gallery
               </Link>
             </li>
             <li>
@@ -77,14 +77,11 @@ export default function Footer() {
         <div>
           <h4 className="text-white text-lg font-semibold mb-4">Our Programs</h4>
           <ul className="space-y-3">
-            <li>Religious Advocacy</li>
-            <li>Humanitarian Aid</li>
-            <li>Youth Programs</li>
-            <li>Cultural Events</li>
-            <li>Education & Scholarship</li>
-            <li>Professional Networking</li>
-            <li>Community Service</li>
-            <li>Persecution Support</li>
+            <li>Scholarship Programs</li>
+            <li>Community Outreach</li>
+            <li>Student Support Services</li>
+            <li>Research & Innovation</li>
+            <li>Alumni Network</li>
           </ul>
         </div>
 
@@ -95,7 +92,7 @@ export default function Footer() {
             <li className="flex items-start gap-3">
               <MapPin size={18} className="text-blue-500 mt-1" />
               <span>
-                Serving Nigerian-American Communities Across the USA
+                123 University Ave, Awka, Nigeria
               </span>
             </li>
             <li className="flex items-center gap-3">
@@ -106,8 +103,8 @@ export default function Footer() {
             </li>
             <li className="flex items-center gap-3">
               <Mail size={18} className="text-blue-500" />
-              <a href="mailto:info@cananuusa.org" className="hover:text-white transition">
-                info@cananuusa.net
+              <a href="mailto:info@unizikhostel.org.ng" className="hover:text-white transition">
+                info@unizikhostel.org.ng
               </a>
             </li>
             <li className="flex items-start gap-3">
@@ -122,8 +119,8 @@ export default function Footer() {
 
       {/* Bottom Bar */}
       <div className="border-t border-gray-700 mt-12 pt-6 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} <span className="text-gray-300 font-medium">CANAN USA</span>. 
-        All rights reserved. | Committed to Faith, Justice, and Community
+        © {new Date().getFullYear()} <span className="text-gray-300 font-medium">UNIZIK Hostel</span>. 
+        All rights reserved. | Designed by <a href="https://wa.me/08117256648" target="_blank" className="hover:text-gray-300 transition">Sense Academy</a>
       </div>
     </footer>
   );

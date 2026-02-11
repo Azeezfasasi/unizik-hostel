@@ -2,28 +2,28 @@ import ContactUsMain from "@/components/home-component/ContactUsMain";
 import PageTitle from "@/components/home-component/PageTitle";
 
 export const metadata = {
-  title: 'Contact Us | CANAN USA',
-  description: 'Learn more about our company, values, team, and what makes us different.',
+  title: 'Contact Us | UNIZIK Hostel',
+  description: 'Get in touch with UNIZIK Hostel for inquiries, support, or to join our community.',
   keywords: ['contact us', 'company', 'team', 'values', 'support'],
   openGraph: {
-    title: 'Contact Us | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Contact Us | UNIZIK Hostel',
+    description: 'Get in touch with UNIZIK Hostel for inquiries, support, or to join our community.',
     type: 'website',
-    url: 'https://cananusa.com/contact-us',
+    url: 'https://unizikhostel.com/contact-us',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Contact Us | CANAN USA',
-    description: 'Learn more about our company, values, team, and what makes us different.',
+    title: 'Contact Us | UNIZIK Hostel',
+    description: 'Get in touch with UNIZIK Hostel for inquiries, support, or to join our community.',
   },
   robots: 'index, follow',
-  canonical: 'https://cananusa.com/contact-us',
+  canonical: 'https://unizikhostel.com/contact-us',
 }
 
 export default function ContactUs() {
   return (
     <>
-    <PageTitle title="Contact Us" subtitle="Have questions or want to join us? Reach out using the form below or through our contact details." />
+    <PageTitle title="Contact Us" subtitle="Get in touch with UNIZIK Hostel for inquiries, support, or to join our community." />
     <ContactUsMain />
     </>
   )

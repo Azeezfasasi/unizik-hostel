@@ -62,7 +62,7 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6 my-12">
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg">
         <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Create Account</h2>
-        <p className="text-gray-600 mb-8 text-center">Register to start using CANAN USA</p>
+        <p className="text-gray-600 mb-8 text-center">Register to start using UNIZIK Hostel</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

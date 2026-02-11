@@ -3,28 +3,28 @@ import PageTitle from '@/components/home-component/PageTitle'
 import React from 'react'
 
 export const metadata = {
-  title: 'Blog | CANAN USA',
-  description: 'Stay updated with the latest trends, insights, and news from the CANAN USA community',
-  keywords: ['blog', 'news', 'insights', 'updates', 'CANAN USA'],
+  title: 'Blog | UNIZIK Hostel',
+  description: 'Stay updated with the latest trends, insights, and news from the UNIZIK Hostel community',
+  keywords: ['blog', 'news', 'insights', 'updates', 'UNIZIK Hostel'],
   openGraph: {
-    title: 'Blog | CANAN USA',
-    description: 'Stay updated with the latest trends, insights, and news from the CANAN USA community',
+    title: 'Blog | UNIZIK Hostel',
+    description: 'Stay updated with the latest trends, insights, and news from the UNIZIK Hostel community',
     type: 'website',
-    url: 'https://cananusa.com/blog',
+    url: 'https://unizikhostel.com/blog',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Blog | CANAN USA',
-    description: 'Stay updated with the latest trends, insights, and news from the CANAN USA community',
+    title: 'Blog | UNIZIK Hostel',
+    description: 'Stay updated with the latest trends, insights, and news from the UNIZIK Hostel community',
   },
   robots: 'index, follow',
-  canonical: 'https://cananusa.com/blog',
+  canonical: 'https://unizikhostel.com/blog',
 }
 
 export default function page() {
   return (
     <>
-    <PageTitle title="CANAN USA Insights & News" subtitle="Stay updated with the latest trends, insights, and news from the CANAN USA community" />
+    <PageTitle title="UNIZIK Hostel Insights & News" subtitle="Stay updated with the latest trends, insights, and news from the UNIZIK Hostel community" />
     <BlogNews />
     </>
   )

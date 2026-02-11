@@ -75,13 +75,13 @@ export async function createDonation(req) {
 
       await sendEmail({
         to: donorEmail,
-        subject: `Donation Confirmation - CANAN USA | ${donation.transactionId}`,
+        subject: `Donation Confirmation - UNIZIK Hostel | ${donation.transactionId}`,
         transactionId,
         htmlContent: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2563eb;">Donation Received</h2>
             <p>Dear ${donorName},</p>
-            <p>Thank you for your generous donation to CANAN USA. Your contribution means a lot to us.</p>
+            <p>Thank you for your generous donation to UNIZIK Hostel. Your contribution means a lot to us.</p>
             <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <p><strong>Transaction ID:</strong> ${transactionId}</p>
               <p><strong>Amount:</strong> ${currency} ${amount}</p>
@@ -92,7 +92,7 @@ export async function createDonation(req) {
             <p>A receipt will be sent to you once your donation has been confirmed by our team.</p>
             <p>If you have any questions, please don't hesitate to contact us.</p>
             <p>God bless you!</p>
-            <p>CANAN USA Team</p>
+            <p>UNIZIK Hostel Team</p>
           </div>
         `,
       });
@@ -110,7 +110,7 @@ export async function createDonation(req) {
         const adminEmailPromises = admins.map(admin =>
           sendEmail({
             to: admin.email,
-            subject: `New Donation Submitted - CANAN USA | ${transactionId}`,
+            subject: `New Donation Submitted - UNIZIK Hostel | ${transactionId}`,
             transactionId,
             htmlContent: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -131,7 +131,7 @@ export async function createDonation(req) {
                   ${donorMessage ? `<p><strong>Donor Message:</strong> ${donorMessage}</p>` : ''}
                 </div>
                 <p style="color: #666; font-size: 14px;">Please log in to the admin panel to review and update the donation status.</p>
-                <p>CANAN USA Team</p>
+                <p>UNIZIK Hostel Team</p>
               </div>
             `,
           })
@@ -262,7 +262,7 @@ export async function updateDonationStatus(body, donationId) {
 
       await sendEmail({
         to: donation.donorEmail,
-        subject: `Donation Status Update - CANAN USA | ${donation.transactionId}`,
+        subject: `Donation Status Update - UNIZIK Hostel | ${donation.transactionId}`,
         transactionId: donation.transactionId,
         htmlContent: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -279,7 +279,7 @@ export async function updateDonationStatus(body, donationId) {
             </div>
             <p>If you have any questions, please contact us at your earliest convenience.</p>
             <p>God bless you!</p>
-            <p><strong>CANAN USA Team</strong></p>
+            <p><strong>UNIZIK Hostel Team</strong></p>
           </div>
         `,
       });
@@ -297,7 +297,7 @@ export async function updateDonationStatus(body, donationId) {
         const adminEmailPromises = admins.map(admin =>
           sendEmail({
             to: admin.email,
-            subject: `Donation Status Updated - CANAN USA | ${donation.transactionId}`,
+            subject: `Donation Status Updated - UNIZIK Hostel | ${donation.transactionId}`,
             transactionId: donation.transactionId,
             htmlContent: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -314,7 +314,7 @@ export async function updateDonationStatus(body, donationId) {
                   ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
                   <p><strong>Updated At:</strong> ${new Date().toLocaleString()}</p>
                 </div>
-                <p>CANAN USA Team</p>
+                <p>UNIZIK Hostel Team</p>
               </div>
             `,
           })
@@ -353,13 +353,13 @@ export async function sendReceiptEmail(donationId) {
 
     await sendEmail({
       to: donation.donorEmail,
-      subject: `Donation Receipt #${receiptNumber} - CANAN USA`,
+      subject: `Donation Receipt #${receiptNumber} - UNIZIK Hostel`,
       transactionId: donation.transactionId,
       htmlContent: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2563eb;">Official Donation Receipt</h2>
           <p>Dear ${donation.donorName},</p>
-          <p>Thank you for your generous donation to CANAN USA.</p>
+          <p>Thank you for your generous donation to UNIZIK Hostel.</p>
           <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0;">Donation Details</h3>
             <p><strong>Receipt Number:</strong> ${receiptNumber}</p>
@@ -368,10 +368,10 @@ export async function sendReceiptEmail(donationId) {
             <p><strong>Donation Type:</strong> ${donation.donationType}</p>
             <p><strong>Date:</strong> ${new Date(donation.createdAt).toLocaleDateString()}</p>
           </div>
-          <p>This receipt is for your tax records. CANAN USA is a registered non-profit organization.</p>
+          <p>This receipt is for your tax records. UNIZIK Hostel is a registered non-profit organization.</p>
           <p>Your generous support enables us to continue our mission of serving the community.</p>
           <p>God bless you!</p>
-          <p><strong>CANAN USA Team</strong></p>
+          <p><strong>UNIZIK Hostel Team</strong></p>
         </div>
       `,
     });
