@@ -1,0 +1,55 @@
+import mongoose from 'mongoose';
+
+const RoomSchema = new mongoose.Schema({
+    hostelId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Hostel',
+        required: [true, 'Hostel ID is required']
+    },
+    roomNumber: {
+        type: String,
+        required: [true, 'Room number is required'],
+        trim: true
+    },
+    roomBlock: {
+        type: String,
+        required: [true, 'Room block is required'],
+        trim: true
+    },
+    roomFloor: {
+        type: String,
+        required: [true, 'Room block is required'],
+        trim: true
+    },
+    capacity: {
+        type: Number,
+        required: [true, 'Capacity is required'],
+        min: [1, 'Capacity must be at least 1']
+    },
+    currentOccupancy: {
+        type: Number,
+        default: 0
+    },
+    assignedStudents: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    price: {
+        type: Number,
+        required: [true, 'Price is required'],
+        min: [0, 'Price cannot be negative']
+    },
+    facilities: {
+        type: [String],
+        default: []
+    },
+    status: {
+        type: String,
+        enum: ['available', 'occupied', 'under-maintenance'],
+        default: 'available'
+    }
+}, {
+    timestamps: true
+});
+
+export default mongoose.models.Room || mongoose.model('Room', RoomSchema);
