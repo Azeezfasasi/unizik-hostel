@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import RoomRequest from '../models/RoomRequest.js';
 import Room from '../models/Room.js';
+import Hostel from '../models/Hostel.js';
+import User from '../models/User.js';
 import { connectDB } from '../db/connect.js';
 
 // Get all rooms
@@ -15,8 +17,9 @@ export const getRooms = async (req) => {
             { status: 200 }
         );
     } catch (error) {
+        console.error('❌ Error in getRooms:', error);
         return NextResponse.json(
-            { success: false, message: error.message },
+            { success: false, message: error.message || 'Failed to fetch rooms', error: error.toString() },
             { status: 500 }
         );
     }

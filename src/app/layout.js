@@ -2,6 +2,7 @@ import '../globals.css'
 import MainHeader from '@/components/home-component/MainHeader'
 import Footer from '@/components/home-component/Footer'
 import { AuthProvider } from "@/context/AuthContext";
+import MessageSlider from '@/components/home-component/MessageSlider';
 
 export const metadata = {
   title: 'UNIZIK Hostel - The hostel with Discipline, Self-Reliance and Excellence',
@@ -18,6 +19,7 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>
           <div className="site-main-header sticky top-0 z-50">
+            <MessageSlider />
             <MainHeader />
           </div>
           <main>{children}</main>

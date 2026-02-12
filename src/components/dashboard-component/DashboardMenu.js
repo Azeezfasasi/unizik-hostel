@@ -237,6 +237,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
         { href: '/dashboard/hero-content', label: 'Hero Slider', roles: ['super admin'] },
         { href: '/dashboard/welcome-cta-content', label: 'Welcome CTA', roles: ['super admin'] },
         { href: '/dashboard/testimonial-content', label: 'Testimonials', roles: ['super admin'] },
+        { href: '/dashboard/manage-message-slider', label: 'Manage Message Slider', roles: ['super admin'] },
       ]
     },
     // {
