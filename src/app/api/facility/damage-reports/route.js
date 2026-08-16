@@ -3,6 +3,7 @@ import { authenticate } from '@/app/server/middleware/auth.js';
 import { isAdmin } from '@/app/server/middleware/auth.js';
 import { connectDB } from '@/app/server/db/connect.js';
 import Facility from '@/app/server/models/Facility.js';
+import FacilityCategory from '@/app/server/models/FacilityCategory.js';
 
 // GET /api/facility/damage-reports - Get all damage reports
 export async function GET(req) {

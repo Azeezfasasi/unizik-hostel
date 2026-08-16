@@ -11,7 +11,7 @@ const NOTIFICATION_META = {
 };
 
 export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu }) {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
   const avatar = user && user.avatar ? user.avatar : '/images/profile1.jpg';
   const role = user?.role ? user.role.replace('-', ' ') : 'User';
@@ -73,10 +73,11 @@ export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu })
     if (!isStaffRole) return;
     setNotificationsLoading(true);
     try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const [requestsRes, complaintsRes, damageRes] = await Promise.all([
-        fetch('/api/room/requests'),
-        fetch('/api/complaints?status=Open'),
-        fetch('/api/facility/damage-reports'),
+        fetch('/api/room/requests', { headers }),
+        fetch('/api/complaints?status=Open', { headers }),
+        fetch('/api/facility/damage-reports', { headers }),
       ]);
 
       const requestsData = requestsRes.ok ? await requestsRes.json() : { data: [] };
@@ -130,7 +131,7 @@ export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu })
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
-  }, [user?.role]);
+  }, [user?.role, token]);
 
   // Refresh when dropdown opens
   useEffect(() => {

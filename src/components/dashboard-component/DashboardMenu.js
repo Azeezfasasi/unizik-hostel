@@ -240,16 +240,6 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
         { href: '/dashboard/website-logo', label: 'Website Logo', roles: ['super admin', 'admin'] },
       ]
     },
-    // {
-    //   href: '/dashboard/our-leadership',
-    //   label: 'Manage Leadership',
-    //   icon: 'Manage Leadership',
-    //   roles: ['super admin', 'admin', 'it-support'],
-    //   children: [
-    //     { href: '/dashboard/manage-leadership', label: 'Leadership', roles: ['super admin'] },
-    //     { href: '/dashboard/manage-departments', label: 'Leadership Departments', roles: ['super admin'] },
-    //   ]
-    // },
     {
       href: '/dashboard/contact-contents',
       label: 'Contact Page Contents',
@@ -275,7 +265,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
 
   // Desktop / large screens: persistent sidebar
   const desktopNav = (
-    <nav className={`hidden lg:flex pt-[15px] h-full bg-blue-900 border-r border-gray-100 ${collapsed ? 'w-16' : 'w-75'} transition-width duration-200`} aria-label="Dashboard navigation">
+    <nav className={`hidden lg:flex pt-[15px] h-screen overflow-y-auto bg-slate-950 border-r border-gray-100 ${collapsed ? 'w-16' : 'w-75'} transition-width duration-200`} aria-label="Dashboard navigation">
       <div className="h-full overflow-y-auto py-6 px-2">
         <ul className="space-y-1">
           {items.map(i => {
@@ -294,7 +284,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                   <div>
                     <button
                       onClick={() => toggleSub(i.href)}
-                      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-[#00bba7] text-white shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}
                     >
                       <span className="flex justify-start items-center gap-2">
                         <span className="shrink-0"> <Icon name={i.icon} /> </span>
@@ -312,7 +302,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                       <ul className="mt-1 space-y-0.5 pl-10 border-l border-white/10 ml-5">
                         {i.children.map(c => (
                           <li key={c.href}>
-                            <Link href={c.href} className={`block px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${pathname === c.href ? 'bg-white text-blue-900 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
+                            <Link href={c.href} className={`block px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${pathname === c.href ? 'bg-teal-500/10 text-teal-300 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                               {c.label}
                             </Link>
                           </li>
@@ -321,7 +311,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                     )}
                   </div>
                 ) : (
-                  <Link href={i.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
+                  <Link href={i.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-teal-500/10 text-teal-300 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                     <span className="shrink-0"> <Icon name={i.icon} /> </span>
                     {!collapsed && <span className="text-sm font-medium">{i.label}</span>}
                   </Link>
@@ -339,7 +329,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
     <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
 
-      <nav className="relative z-50 h-full w-[85%] md:w-[50%] bg-blue-900 border-r border-gray-100">
+      <nav className="relative z-50 h-full w-[85%] md:w-[50%] bg-slate-950 border-r border-gray-100">
         <div className="h-full overflow-y-auto py-6 px-4">
           <div className="flex items-center justify-between mb-6">
             <Link href="/" className="flex flex-col items-center gap-3">
@@ -367,12 +357,12 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                   <li key={i.href}>
                     {hasChildren ? (
                       <div>
-                        <button onClick={() => toggleSub(i.href)} className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
+                        <button onClick={() => toggleSub(i.href)} className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-teal-500/10 text-teal-300 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                           <span className="flex items-center gap-3">
                             <span className="shrink-0"> <Icon name={i.icon} /> </span>
                             <span className="text-sm font-medium">{i.label}</span>
                           </span>
-                          <svg className={`w-4 h-4 transition-transform duration-150 ${active ? 'text-blue-900' : 'text-blue-200'} ${isOpen ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                          <svg className={`w-4 h-4 transition-transform duration-150 ${active ? 'text-teal-300' : 'text-blue-200'} ${isOpen ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor">
                             <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 6l6 4-6 4V6z" />
                           </svg>
                         </button>
@@ -382,7 +372,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                           <ul className="mt-1 space-y-0.5 pl-9 border-l border-white/10 ml-5">
                             {i.children.map(c => (
                               <li key={c.href}>
-                                <Link href={c.href} onClick={onClose} className={`block px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${pathname === c.href ? 'bg-white text-blue-900 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
+                                <Link href={c.href} onClick={onClose} className={`block px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${pathname === c.href ? 'bg-teal-500/10 text-teal-300 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                                   {c.label}
                                 </Link>
                               </li>
@@ -391,7 +381,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                         )}
                       </div>
                     ) : (
-                      <Link href={i.href} onClick={onClose} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
+                      <Link href={i.href} onClick={onClose} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-teal-500/10 text-teal-300 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                         <span className="shrink-0"> <Icon name={i.icon} /> </span>
                         <span className="text-sm font-medium">{i.label}</span>
                       </Link>

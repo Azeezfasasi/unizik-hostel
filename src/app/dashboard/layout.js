@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }) {
           <div className="flex pt-16">
             <DashboardMenu collapsed={collapsed} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-            <main className="flex-1 p-6 pt-4">{children}</main>
+            <main className="flex-1 p-6 pt-4 h-screen overflow-y-auto">{children}</main>
           </div>
           {/* <div className="mt-[100px]">
             <DashboardBottomNav />
