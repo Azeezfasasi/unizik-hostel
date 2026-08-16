@@ -2,10 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Upload, X, Save } from 'lucide-react';
+import { Upload, X, Save, ImageIcon } from 'lucide-react';
 import { uploadImageToCloudinary, deleteImageFromCloudinary } from '@/app/utils/galleryApi';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { notify } from '@/components/dashboard-component/ui/toast';
+import PageHeader from '@/components/dashboard-component/ui/PageHeader';
+import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton';
 
-export default function WebsiteLogo() {
+function WebsiteLogoInner() {
   const [logo, setLogo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -92,12 +96,11 @@ export default function WebsiteLogo() {
 
         const data = await response.json();
         setLogo(data.logo);
-        setSuccess('Logo uploaded successfully!');
-        setTimeout(() => setSuccess(''), 3000);
+        notify.success('Logo uploaded successfully!');
       }
     } catch (err) {
       console.error('Error uploading logo:', err);
-      setError('Failed to upload logo');
+      notify.error('Failed to upload logo');
       setPreviewUrl(logo?.url);
     } finally {
       setUploading(false);
@@ -298,5 +301,13 @@ export default function WebsiteLogo() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function WebsiteLogo() {
+  return (
+    <ProtectedRoute>
+      <WebsiteLogoInner />
+    </ProtectedRoute>
   );
 }

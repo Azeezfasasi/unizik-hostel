@@ -5,8 +5,10 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { fetchGallery } from '@/app/utils/galleryApi';
 import { ArrowLeft, Loader } from 'lucide-react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import StatusBadge from '@/components/dashboard-component/ui/StatusBadge';
 
-export default function ViewGalleryPage() {
+function ViewGalleryPageInner() {
   const router = useRouter();
   const params = useParams();
   const [gallery, setGallery] = useState(null);
@@ -49,7 +51,7 @@ export default function ViewGalleryPage() {
             <ArrowLeft className="h-5 w-5" />
             Back
           </button>
-          <div className="bg-white rounded-lg shadow-md p-4 sm:p-8 text-center">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-8 text-center">
             <p className="text-red-600">{error || 'Gallery not found'}</p>
           </div>
         </div>
@@ -63,29 +65,23 @@ export default function ViewGalleryPage() {
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 sm:mb-8"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors mb-6 sm:mb-8"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
           Back
         </button>
 
         {/* Gallery Container */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Header */}
-          <div className="p-4 sm:p-8 border-b border-gray-200">
+          <div className="p-4 sm:p-8 border-b border-gray-100">
             <div className="flex flex-col sm:items-start sm:justify-between gap-4 sm:flex-row">
               <div className="flex-1">
                 <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">
                   {gallery.title}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                  <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
-                    gallery.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {gallery.status}
-                  </span>
+                  <StatusBadge status={gallery.status} />
                   {gallery.featured && (
                     <span className="px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-yellow-100 text-yellow-800">
                       Featured
@@ -95,7 +91,7 @@ export default function ViewGalleryPage() {
               </div>
               <button
                 onClick={() => router.push(`/dashboard/edit-gallery/${gallery._id}`)}
-                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
               >
                 Edit Gallery
               </button>
@@ -208,5 +204,13 @@ export default function ViewGalleryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ViewGalleryPage() {
+  return (
+    <ProtectedRoute allowedRoles={['super admin', 'admin', 'staff']}>
+      <ViewGalleryPageInner />
+    </ProtectedRoute>
   );
 }

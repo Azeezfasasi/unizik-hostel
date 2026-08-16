@@ -1,9 +1,29 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calendar, Building2, MapPin, CheckCircle, XCircle, Clock, Loader, AlertCircle } from 'lucide-react'
+import { Calendar, MapPin, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import StatusBadge from '@/components/dashboard-component/ui/StatusBadge'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton'
+
+// Decorative tone map for the timeline connector dot / mobile card accent —
+// mirrors StatusBadge's color language (emerald/amber/red) but is applied to
+// non-text elements that StatusBadge doesn't cover.
+const STATUS_TONE = {
+  approved: { dot: 'bg-emerald-500', border: 'border-emerald-500' },
+  pending: { dot: 'bg-amber-500', border: 'border-amber-500' },
+  declined: { dot: 'bg-red-500', border: 'border-red-500' },
+}
+
+const FILTER_TABS = [
+  { key: 'all', label: 'All', icon: null, activeClass: 'bg-blue-900 text-white' },
+  { key: 'approved', label: 'Approved', icon: CheckCircle, activeClass: 'bg-emerald-600 text-white' },
+  { key: 'pending', label: 'Pending', icon: Clock, activeClass: 'bg-amber-600 text-white' },
+  { key: 'declined', label: 'Declined', icon: XCircle, activeClass: 'bg-red-600 text-white' },
+]
 
 export default function RoomHistoryPage() {
   const { isAuthenticated, loading: authLoading, token, user } = useAuth()
@@ -84,14 +104,7 @@ export default function RoomHistoryPage() {
   const filteredHistory = filterStatus === 'all' ? history : history.filter((h) => h.status === filterStatus)
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <PageSpinner label="Loading..." />
   }
 
   if (!isAuthenticated) {
@@ -99,116 +112,72 @@ export default function RoomHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Room History</h1>
-              <p className="text-gray-600 mt-1">View all your past room allocations</p>
-            </div>
-            <div className="flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-lg">
-              <Calendar size={20} className="text-blue-600" />
-              <span className="text-blue-900 font-medium">{history.length} Total Allocations</span>
-            </div>
+    <div className="max-w-6xl mx-auto space-y-6 mt-4 md:mt-8">
+      <PageHeader
+        icon={Calendar}
+        title="Room History"
+        subtitle="View all your past room allocations"
+        actions={
+          <div className="flex items-center gap-2 bg-blue-900/5 px-4 py-2 rounded-lg">
+            <Calendar size={18} className="text-blue-900" />
+            <span className="text-blue-900 font-medium text-sm">{history.length} Total Allocations</span>
+          </div>
+        }
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-4">
+          <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+          <div>
+            <h3 className="text-sm font-semibold text-red-900 mb-1">Error Loading History</h3>
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-4">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-            <div>
-              <h3 className="text-sm font-semibold text-red-900 mb-1">Error Loading History</h3>
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        )}
+      {/* Status Filter */}
+      {!loading && history.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          {FILTER_TABS.map(({ key, label, icon: Icon, activeClass }) => (
+            <button
+              key={key}
+              onClick={() => setFilterStatus(key)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterStatus === key ? activeClass : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {Icon && <Icon size={16} />}
+              {label} ({key === 'all' ? history.length : history.filter((h) => h.status === key).length})
+            </button>
+          ))}
+        </div>
+      )}
 
-        {/* Status Filter */}
-        {!loading && history.length > 0 && (
-          <div className="flex gap-2 mb-8 flex-wrap">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filterStatus === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              All ({history.length})
-            </button>
-            <button
-              onClick={() => setFilterStatus('approved')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                filterStatus === 'approved'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <CheckCircle size={16} />
-              Approved ({history.filter((h) => h.status === 'approved').length})
-            </button>
-            <button
-              onClick={() => setFilterStatus('pending')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                filterStatus === 'pending'
-                  ? 'bg-yellow-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <Clock size={16} />
-              Pending ({history.filter((h) => h.status === 'pending').length})
-            </button>
-            <button
-              onClick={() => setFilterStatus('declined')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                filterStatus === 'declined'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <XCircle size={16} />
-              Declined ({history.filter((h) => h.status === 'declined').length})
-            </button>
-          </div>
-        )}
-
-        {/* Timeline / Cards */}
-        {loading ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-            <p className="text-gray-600">Loading your room history...</p>
-          </div>
-        ) : filteredHistory.length > 0 ? (
-          <div className="space-y-4 sm:space-y-6">
-            {/* Desktop Timeline */}
-            <div className="hidden sm:block">
-              {filteredHistory.map((item, idx) => (
+      {/* Timeline / Cards */}
+      {loading ? (
+        <PageSpinner label="Loading your room history..." />
+      ) : filteredHistory.length > 0 ? (
+        <div className="space-y-4 sm:space-y-6">
+          {/* Desktop Timeline */}
+          <div className="hidden sm:block">
+            {filteredHistory.map((item, idx) => {
+              const tone = STATUS_TONE[item.status] || { dot: 'bg-gray-400', border: 'border-gray-300' }
+              return (
                 <div key={item._id} className="flex gap-4">
                   {/* Timeline Connector */}
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
-                        item.status === 'approved'
-                          ? 'bg-green-500'
-                          : item.status === 'pending'
-                          ? 'bg-yellow-500'
-                          : 'bg-red-500'
-                      }`}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${tone.dot}`}
                     >
                       {idx + 1}
                     </div>
-                    {idx < filteredHistory.length - 1 && <div className="w-1 h-12 bg-gray-300 my-2" />}
+                    {idx < filteredHistory.length - 1 && <div className="w-1 h-12 bg-gray-200 my-2" />}
                   </div>
 
                   {/* Card */}
                   <div className="flex-1 pb-6">
-                    <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                         <div>
                           <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -216,20 +185,7 @@ export default function RoomHistoryPage() {
                           </h3>
                           <p className="text-gray-600">{item.hostel.name}</p>
                         </div>
-                        <div
-                          className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 w-fit ${
-                            item.status === 'approved'
-                              ? 'bg-green-100 text-green-700'
-                              : item.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {item.status === 'approved' && <CheckCircle size={16} />}
-                          {item.status === 'pending' && <Clock size={16} />}
-                          {item.status === 'declined' && <XCircle size={16} />}
-                          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                        </div>
+                        <StatusBadge status={item.status} />
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
@@ -255,48 +211,32 @@ export default function RoomHistoryPage() {
 
                       {item.hostel.location && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin size={16} className="text-blue-600" />
+                          <MapPin size={16} className="text-blue-900" />
                           {item.hostel.location}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
+          </div>
 
-            {/* Mobile Cards */}
-            <div className="sm:hidden space-y-4">
-              {filteredHistory.map((item, idx) => (
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-4">
+            {filteredHistory.map((item) => {
+              const tone = STATUS_TONE[item.status] || { dot: 'bg-gray-400', border: 'border-gray-300' }
+              return (
                 <div
                   key={item._id}
-                  className={`bg-white rounded-lg shadow-sm p-4 border-l-4 ${
-                    item.status === 'approved'
-                      ? 'border-green-500'
-                      : item.status === 'pending'
-                      ? 'border-yellow-500'
-                      : 'border-red-500'
-                  }`}
+                  className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 border-l-4 ${tone.border}`}
                 >
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Room {item.room?.roomNumber}</h3>
                       <p className="text-sm text-gray-600">{item.hostel.name}</p>
                     </div>
-                    <div
-                      className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit ${
-                        item.status === 'approved'
-                          ? 'bg-green-100 text-green-700'
-                          : item.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {item.status === 'approved' && <CheckCircle size={14} />}
-                      {item.status === 'pending' && <Clock size={14} />}
-                      {item.status === 'declined' && <XCircle size={14} />}
-                      {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                    </div>
+                    <StatusBadge status={item.status} />
                   </div>
 
                   <div className="space-y-3">
@@ -323,25 +263,23 @@ export default function RoomHistoryPage() {
 
                     {item.hostel.location && (
                       <div className="flex items-center gap-2 text-sm text-gray-600 pt-2 border-t border-gray-200">
-                        <MapPin size={16} className="text-blue-600" />
+                        <MapPin size={16} className="text-blue-900" />
                         {item.hostel.location}
                       </div>
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600 text-lg">No room allocations found</p>
-            <p className="text-gray-500 text-sm mt-2">
-              {filterStatus !== 'all' ? 'Try changing your filter.' : 'You have not made any room requests yet.'}
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <EmptyState
+          icon={Calendar}
+          title="No room allocations found"
+          message={filterStatus !== 'all' ? 'Try changing your filter.' : 'You have not made any room requests yet.'}
+        />
+      )}
     </div>
   )
 }

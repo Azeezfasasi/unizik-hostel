@@ -1,9 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCampus } from '@/context/CampusContext';
+import { DoorOpen, ShieldAlert, Loader2 } from 'lucide-react';
+import PageHeader from '@/components/dashboard-component/ui/PageHeader';
+import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton';
+import { notify } from '@/components/dashboard-component/ui/toast';
 
 const COMMON_FACILITIES = [
   'Bed',
@@ -27,8 +31,6 @@ export default function AddRoomPage() {
   const { token, isAdmin } = useAuth();
   const { hostels, loading: hostelsLoading } = useCampus();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
     hostelId: '',
@@ -47,13 +49,16 @@ export default function AddRoomPage() {
   // Redirect if not admin
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-4">You do not have permission to add rooms.</p>
+      <div className="flex items-center justify-center py-16 px-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-md w-full text-center">
+          <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-red-600">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-4 text-sm">You do not have permission to add rooms.</p>
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 w-full bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
           >
             Back to Dashboard
           </button>
@@ -95,8 +100,6 @@ export default function AddRoomPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     if (!validateForm()) return;
 
@@ -122,12 +125,12 @@ export default function AddRoomPage() {
         throw new Error(data.message || 'Failed to create room');
       }
 
-      setSuccess('Room created successfully!');
+      notify.success('Room created successfully!');
       setTimeout(() => {
         router.push('/dashboard/manage-rooms');
-      }, 1500);
+      }, 1200);
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      notify.error(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -137,231 +140,207 @@ export default function AddRoomPage() {
     router.back();
   };
 
+  const inputClass = (field) =>
+    `w-full px-3.5 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 transition ${
+      errors[field]
+        ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500'
+        : 'border-gray-200 focus:ring-blue-900/20 focus:border-blue-900'
+    }`;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-6 sm:py-8 px-3 sm:px-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Add New Room</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Create a new room in a hostel</p>
-        </div>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <PageHeader
+        icon={DoorOpen}
+        title="Add New Room"
+        subtitle="Create a new room in a hostel"
+      />
 
-        {/* Messages */}
-        {error && (
-          <div className="mb-4 sm:mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
-            <p className="text-red-700 text-sm sm:text-base flex items-start gap-2">
-              <span className="text-lg">❌</span>
-              <span>{error}</span>
-            </p>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-            <p className="text-green-700 text-sm sm:text-base flex items-start gap-2">
-              <span className="text-lg">✅</span>
-              <span>{success}</span>
-            </p>
-          </div>
-        )}
-
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
-          {hostelsLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      {/* Form */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 md:p-8">
+        {hostelsLoading ? (
+          <PageSpinner label="Loading hostels..." />
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Hostel Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Hostel <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="hostelId"
+                value={formData.hostelId}
+                onChange={handleInputChange}
+                className={inputClass('hostelId')}
+              >
+                <option value="">-- Choose a Hostel --</option>
+                {hostels.map(hostel => (
+                  <option key={hostel._id} value={hostel._id}>
+                    {hostel.name} ({hostel.hostelCampus})
+                  </option>
+                ))}
+              </select>
+              {errors.hostelId && <p className="text-red-500 text-xs mt-1">{errors.hostelId}</p>}
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-              {/* Hostel Selection */}
+
+            {/* Row 1: Room Number and Block */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Hostel <span className="text-red-500">*</span>
+                  Room Number <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="hostelId"
-                  value={formData.hostelId}
+                <input
+                  type="text"
+                  name="roomNumber"
+                  value={formData.roomNumber}
                   onChange={handleInputChange}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
-                    errors.hostelId ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  placeholder="e.g., Room 101"
+                  className={inputClass('roomNumber')}
+                />
+                {errors.roomNumber && <p className="text-red-500 text-xs mt-1">{errors.roomNumber}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Block <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="roomBlock"
+                  value={formData.roomBlock}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Block A"
+                  className={inputClass('roomBlock')}
+                />
+                {errors.roomBlock && <p className="text-red-500 text-xs mt-1">{errors.roomBlock}</p>}
+              </div>
+            </div>
+
+            {/* Row 2: Floor and Status */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Floor <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="roomFloor"
+                  value={formData.roomFloor}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Ground Floor"
+                  className={inputClass('roomFloor')}
+                />
+                {errors.roomFloor && <p className="text-red-500 text-xs mt-1">{errors.roomFloor}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className={inputClass('status')}
                 >
-                  <option value="">-- Choose a Hostel --</option>
-                  {hostels.map(hostel => (
-                    <option key={hostel._id} value={hostel._id}>
-                      {hostel.name} ({hostel.hostelCampus})
+                  {ROOM_STATUSES.map(status => (
+                    <option key={status} value={status}>
+                      {status.replaceAll('-', ' ').toUpperCase()}
                     </option>
                   ))}
                 </select>
-                {errors.hostelId && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.hostelId}</p>}
               </div>
+            </div>
 
-              {/* Row 1: Room Number and Block */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Room Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="roomNumber"
-                    value={formData.roomNumber}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Room 101"
-                    className={`w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
-                      errors.roomNumber ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.roomNumber && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.roomNumber}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Block <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="roomBlock"
-                    value={formData.roomBlock}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Block A"
-                    className={`w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
-                      errors.roomBlock ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.roomBlock && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.roomBlock}</p>}
-                </div>
-              </div>
-
-              {/* Row 2: Floor and Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Floor <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="roomFloor"
-                    value={formData.roomFloor}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Ground Floor"
-                    className={`w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
-                      errors.roomFloor ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.roomFloor && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.roomFloor}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  >
-                    {ROOM_STATUSES.map(status => (
-                      <option key={status} value={status}>
-                        {status.replaceAll('-', ' ').toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Row 3: Capacity and Current Occupancy */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Capacity (Beds) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="capacity"
-                    value={formData.capacity}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 4"
-                    min="1"
-                    className={`w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
-                      errors.capacity ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.capacity && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.capacity}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Occupancy</label>
-                  <input
-                    type="number"
-                    name="currentOccupancy"
-                    value={formData.currentOccupancy}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 2"
-                    min="0"
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  />
-                </div>
-              </div>
-
-              {/* Price */}
+            {/* Row 3: Capacity and Current Occupancy */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price (₦) <span className="text-red-500">*</span>
+                  Capacity (Beds) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
-                  name="price"
-                  value={formData.price}
+                  name="capacity"
+                  value={formData.capacity}
                   onChange={handleInputChange}
-                  placeholder="e.g., 50000"
-                  min="0"
-                  className={`w-full px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
-                    errors.price ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  placeholder="e.g., 4"
+                  min="1"
+                  className={inputClass('capacity')}
                 />
-                {errors.price && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.price}</p>}
+                {errors.capacity && <p className="text-red-500 text-xs mt-1">{errors.capacity}</p>}
               </div>
 
-              {/* Facilities */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Room Facilities
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  {COMMON_FACILITIES.map(facility => (
-                    <label key={facility} className="flex items-center gap-2 cursor-pointer p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-blue-50 transition text-sm">
-                      <input
-                        type="checkbox"
-                        checked={formData.facilities.includes(facility)}
-                        onChange={() => handleFacilityToggle(facility)}
-                        className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                      />
-                      <span className="text-gray-700">{facility}</span>
-                    </label>
-                  ))}
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current Occupancy</label>
+                <input
+                  type="number"
+                  name="currentOccupancy"
+                  value={formData.currentOccupancy}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 2"
+                  min="0"
+                  className={inputClass('currentOccupancy')}
+                />
               </div>
+            </div>
 
-              {/* Buttons */}
-              <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-blue-600 text-white py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium text-sm sm:text-base"
-                >
-                  {loading ? 'Creating Room...' : 'Create Room'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 sm:py-3 rounded-lg hover:bg-gray-400 transition font-medium text-sm sm:text-base"
-                >
-                  Cancel
-                </button>
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Price (₦) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                placeholder="e.g., 50000"
+                min="0"
+                className={inputClass('price')}
+              />
+              {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
+            </div>
+
+            {/* Facilities */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Room Facilities
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                {COMMON_FACILITIES.map(facility => (
+                  <label
+                    key={facility}
+                    className="flex items-center gap-2 cursor-pointer p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.facilities.includes(facility)}
+                      onChange={() => handleFacilityToggle(facility)}
+                      className="w-4 h-4 text-blue-900 rounded cursor-pointer focus:ring-blue-900/20"
+                    />
+                    <span className="text-gray-700">{facility}</span>
+                  </label>
+                ))}
               </div>
-            </form>
-          )}
-        </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
+              >
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading ? 'Creating Room...' : 'Create Room'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

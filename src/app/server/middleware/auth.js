@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { connectDB } from "../db/connect.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_EXPIRE = process.env.JWT_EXPIRE || "7d";
 
 // Middleware to verify JWT token
 export const authenticate = async (req, callback) => {
@@ -108,7 +108,7 @@ export const isAdmin = async (req, callback) => {
     return NextResponse.json(
       {
         success: false,
-        message: "Admin access only",
+        message: "Admin or Super Admin access only",
       },
       { status: 403 }
     );
@@ -119,11 +119,11 @@ export const isAdmin = async (req, callback) => {
 
 // Middleware for manager and admin
 export const isManagerOrAdmin = async (req, callback) => {
-  if (!req.user || !["manager", "admin"].includes(req.user.role)) {
+  if (!req.user || !["super admin", "admin"].includes(req.user.role)) {
     return NextResponse.json(
       {
         success: false,
-        message: "Manager or Admin access only",
+        message: "Super Admin or Admin access only",
       },
       { status: 403 }
     );

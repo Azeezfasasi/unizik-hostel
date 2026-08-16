@@ -18,8 +18,6 @@ export default [
       'no-unused-vars': 'off',
       'no-undef': 'warn',
       '@next/next/no-img-element': 'warn',
-      // Disable rules that aren't available in this ESLint setup
-      'react-hooks/exhaustive-deps': 'off',
     },
     languageOptions: {
       ecmaVersion: 2024,
@@ -39,12 +37,6 @@ export default [
         JSX: 'readonly',
       }
     }
-  },
-  // Suppress react-hooks/exhaustive-deps errors in files that reference it
-  {
-    files: ['src/app/dashboard/contact-form-responses/page.js', 'src/app/gallery/[id]/page.js', 'src/components/dashboard-component/DashboardStats.js'],
-    rules: {
-      'react-hooks/exhaustive-deps': 'off'
-    }
+
   }
 ];

@@ -89,19 +89,19 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
       href: '/dashboard/hostel',
       label: 'Hostel',
       icon: 'blog',
-      roles: ['super admin', 'admin', 'staff'],
+      roles: ['super admin', 'admin', 'staff', 'student'],
       children: [
-        { href: '/dashboard/my-room-details', label: 'My Room Details', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/my-room-details', label: 'My Room Details', roles: ['student'] },
+        { href: '/dashboard/request-a-room', label: 'Request a room', roles: ['student'] },
         { href: '/dashboard/campus-list', label: 'Campus List', roles: ['super admin', 'admin'] },
         { href: '/dashboard/hostel-list', label: 'Hostel List', roles: ['super admin', 'admin'] },
         { href: '/dashboard/manage-rooms', label: 'Manage Rooms', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/request-a-room', label: 'Request a room', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/all-room-requests', label: 'All Room Requests', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/room-allocations', label: 'Room Allocations', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/all-room-requests', label: 'All Room Requests', roles: ['super admin', 'admin', 'staff'] },
+        { href: '/dashboard/room-allocations', label: 'Room Allocations', roles: ['super admin', 'admin', 'staff'] },
         { href: '/dashboard/assign-rooms', label: 'Assign Rooms', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/occupancy', label: 'Occupancy', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/students-room-history', label: 'Students Room History', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/room-history', label: 'Room History', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/occupancy', label: 'Occupancy', roles: ['super admin', 'admin', 'staff'] },
+        { href: '/dashboard/students-room-history', label: 'Students Room History', roles: ['super admin', 'admin', 'staff'] },
+        { href: '/dashboard/room-history', label: 'Room History', roles: ['super admin', 'admin', 'staff'] },
       ]
     },
 
@@ -110,13 +110,13 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
       href: '/dashboard/facility',
       label: 'Facilities',
       icon: 'blog',
-      roles: ['super admin', 'admin', 'staff'],
+      roles: ['super admin', 'admin', 'staff', 'student'],
       children: [
-        { href: '/dashboard/all-facilities', label: 'All Facilities', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/all-facilities', label: 'All Facilities', roles: ['super admin', 'admin', 'staff'] },
         { href: '/dashboard/add-facilities', label: 'Add Facilities', roles: ['super admin', 'admin'] },
         { href: '/dashboard/add-facility-category', label: 'Add Category', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/report-damages', label: 'Report Damages', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/all-damage-reports', label: 'All Damage Reports', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/report-damages', label: 'Report Damages', roles: ['super admin', 'admin', 'staff', 'student'] },
+        { href: '/dashboard/all-damage-reports', label: 'All Damage Reports', roles: ['super admin', 'admin', 'staff'] },
       ]
     },
 
@@ -166,7 +166,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
       href: '/dashboard/newsletter',
       label: 'Newsletter Management',
       icon: 'Newsletter',
-      roles: ['super admin', 'admin', 'committee', 'it-support'],
+      roles: ['super admin', 'admin', 'staff'],
       children: [
         { href: '/dashboard/send-newsletter', label: 'Send Newsletter', roles: ['super admin', 'admin'] },
         { href: '/dashboard/all-newsletters', label: 'All Newsletters', roles: ['super admin', 'admin', 'staff'] },
@@ -179,38 +179,18 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
       href: '/dashboard/complaints',
       label: 'Complaints',
       icon: 'blog',
-      roles: ['super admin', 'admin', 'staff'],
+      roles: ['super admin', 'admin', 'staff', 'student'],
       children: [
-        { href: '/dashboard/manage-complaints', label: 'Manage Complaints', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/send-complaint', label: 'Send a Complaint', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/manage-complaints', label: 'Manage Complaints', roles: ['super admin', 'admin', 'staff'] },
+        { href: '/dashboard/send-complaint', label: 'Send a Complaint', roles: ['super admin', 'admin', 'staff', 'student'] },
       ]
     },
 
-    // Transaction management
-    {
-      href: '/dashboard/transactions',
-      label: 'Transaction Management',
-      icon: 'blog',
-      roles: ['super admin'],
-      children: [
-        { href: '/dashboard/transaction-history', label: 'All Transaction History', roles: ['super admin', 'admin'] },
-        { href: '/dashboard/my-transactions', label: 'My Transactions', roles: ['super admin', 'admin', 'staff', 'student'] },
-      ]
-    },
+    // NOTE: Transaction Management and Announcements are intentionally hidden —
+    // their pages have no backing model/API yet (see implementation plan §1.4).
+    // Re-add once the backend exists so the links aren't dead ends.
 
-    // Announcement management
-    {
-      href: '/dashboard/announcements',
-      label: 'Announcements',
-      icon: 'blog',
-      roles: ['super admin'],
-      children: [
-        { href: '/dashboard/announcements', label: 'All Announcements', roles: ['super admin', 'admin', 'staff', 'student'] },
-        { href: '/dashboard/manage-announcements', label: 'Manage Announcements', roles: ['super admin', 'admin'] },
-      ]
-    },
-
-    { href: '/dashboard/all-notifications', label: 'All Notifications', icon: 'Profile', roles: ['super admin', 'admin', 'staff', 'students', 'it-support'] },
+    { href: '/dashboard/all-notifications', label: 'All Notifications', icon: 'Profile', roles: ['super admin', 'admin', 'staff', 'student'] },
 
     // Gallery management
     {
@@ -225,19 +205,19 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
     },
 
     // Profile management
-    { href: '/dashboard/my-profile', label: 'Profile', icon: 'Profile', roles: ['super admin', 'admin', 'staff', 'students', 'it-support'] },
+    { href: '/dashboard/my-profile', label: 'Profile', icon: 'Profile', roles: ['super admin', 'admin', 'staff', 'student'] },
 
     // Page Content Management
     {
       href: '/dashboard/homepage-contents',
       label: 'HomePage Contents',
       icon: 'Home',
-      roles: ['super admin'],
+      roles: ['super admin', 'admin'],
       children: [
-        { href: '/dashboard/hero-content', label: 'Hero Slider', roles: ['super admin'] },
-        { href: '/dashboard/welcome-cta-content', label: 'Welcome CTA', roles: ['super admin'] },
-        { href: '/dashboard/testimonial-content', label: 'Testimonials', roles: ['super admin'] },
-        { href: '/dashboard/manage-message-slider', label: 'Manage Message Slider', roles: ['super admin'] },
+        { href: '/dashboard/hero-content', label: 'Hero Slider', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/welcome-cta-content', label: 'Welcome CTA', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/testimonial-content', label: 'Testimonials', roles: ['super admin', 'admin'] },
+        { href: '/dashboard/manage-message-slider', label: 'Manage Message Slider', roles: ['super admin', 'admin'] },
       ]
     },
     // {
@@ -255,9 +235,9 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
       href: '/dashboard/logo',
       label: 'Website Logo',
       icon: 'Website Logo',
-      roles: ['super admin'],
+      roles: ['super admin', 'admin'],
       children: [
-        { href: '/dashboard/website-logo', label: 'Website Logo', roles: ['super admin'] },
+        { href: '/dashboard/website-logo', label: 'Website Logo', roles: ['super admin', 'admin'] },
       ]
     },
     // {
@@ -274,9 +254,9 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
       href: '/dashboard/contact-contents',
       label: 'Contact Page Contents',
       icon: 'Contact Page',
-      roles: ['super admin'],
+      roles: ['super admin', 'admin'],
       children: [
-        { href: '/dashboard/contact-details-content', label: 'Contact Details', roles: ['super admin'] },
+        { href: '/dashboard/contact-details-content', label: 'Contact Details', roles: ['super admin', 'admin'] },
       ]
     },
   ]
@@ -314,14 +294,14 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                   <div>
                     <button
                       onClick={() => toggleSub(i.href)}
-                      className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md ${active ? 'bg-indigo-50 text-indigo-600' : 'text-white hover:bg-blue-800'}`}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}
                     >
                       <span className="flex justify-start items-center gap-2">
                         <span className="shrink-0"> <Icon name={i.icon} /> </span>
                         {!collapsed && <span className="text-sm font-medium whitespace-nowrap">{i.label}</span>}
                       </span>
                       {!collapsed && (
-                        <svg className={`w-4 h-4 text-white transition-transform ${isOpen ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                        <svg className={`w-4 h-4 transition-transform duration-150 ${active ? 'text-blue-900' : 'text-blue-200'} ${isOpen ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor">
                           <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 6l6 4-6 4V6z" />
                         </svg>
                       )}
@@ -329,10 +309,10 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
 
                     {/* Submenu (desktop) */}
                     {!collapsed && isOpen && (
-                      <ul className="mt-1 space-y-1 pl-10">
+                      <ul className="mt-1 space-y-0.5 pl-10 border-l border-white/10 ml-5">
                         {i.children.map(c => (
                           <li key={c.href}>
-                            <Link href={c.href} className={`block px-3 py-2 rounded-md text-sm ${pathname === c.href ? 'bg-indigo-50 text-indigo-600' : 'text-white hover:bg-blue-600'}`}>
+                            <Link href={c.href} className={`block px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${pathname === c.href ? 'bg-white text-blue-900 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                               {c.label}
                             </Link>
                           </li>
@@ -341,7 +321,7 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                     )}
                   </div>
                 ) : (
-                  <Link href={i.href} className={`flex items-center gap-3 px-3 py-2 rounded-md ${active ? 'bg-indigo-50 text-indigo-600' : 'text-white hover:bg-blue-800'}`}>
+                  <Link href={i.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                     <span className="shrink-0"> <Icon name={i.icon} /> </span>
                     {!collapsed && <span className="text-sm font-medium">{i.label}</span>}
                   </Link>
@@ -387,22 +367,22 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                   <li key={i.href}>
                     {hasChildren ? (
                       <div>
-                        <button onClick={() => toggleSub(i.href)} className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md ${active ? 'bg-indigo-50 text-blue-800' : 'text-white hover:bg-blue-900'}`}>
+                        <button onClick={() => toggleSub(i.href)} className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                           <span className="flex items-center gap-3">
-                            <span className="shrink-0 text-white"> <Icon name={i.icon} /> </span>
+                            <span className="shrink-0"> <Icon name={i.icon} /> </span>
                             <span className="text-sm font-medium">{i.label}</span>
                           </span>
-                          <svg className={`w-4 h-4 text-white transition-transform ${isOpen ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                          <svg className={`w-4 h-4 transition-transform duration-150 ${active ? 'text-blue-900' : 'text-blue-200'} ${isOpen ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor">
                             <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 6l6 4-6 4V6z" />
                           </svg>
                         </button>
 
                         {/* Mobile submenu accordion */}
                         {isOpen && (
-                          <ul className="mt-1 space-y-1 pl-6">
+                          <ul className="mt-1 space-y-0.5 pl-9 border-l border-white/10 ml-5">
                             {i.children.map(c => (
                               <li key={c.href}>
-                                <Link href={c.href} onClick={onClose} className={`block px-3 py-2 rounded-md text-sm ${pathname === c.href ? 'bg-indigo-50 text-indigo-600' : 'text-white hover:bg-blue-900'}`}>
+                                <Link href={c.href} onClick={onClose} className={`block px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${pathname === c.href ? 'bg-white text-blue-900 font-medium shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
                                   {c.label}
                                 </Link>
                               </li>
@@ -411,8 +391,8 @@ export default function DashboardMenu({ collapsed, mobileOpen = false, onClose =
                         )}
                       </div>
                     ) : (
-                      <Link href={i.href} onClick={onClose} className={`flex items-center gap-3 px-3 py-2 rounded-md ${active ? 'bg-indigo-50 text-indigo-600' : 'text-white hover:bg-blue-900'}`}>
-                        <span className="shrink-0 text-white"> <Icon name={i.icon} /> </span>
+                      <Link href={i.href} onClick={onClose} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${active ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`}>
+                        <span className="shrink-0"> <Icon name={i.icon} /> </span>
                         <span className="text-sm font-medium">{i.label}</span>
                       </Link>
                     )}

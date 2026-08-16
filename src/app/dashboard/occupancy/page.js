@@ -1,32 +1,40 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Search, AlertCircle, Loader, X, Eye } from 'lucide-react'
+import { Search, AlertCircle, Eye, BarChart3, Bed, Users, Percent } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import Pagination from '@/components/dashboard-component/ui/Pagination'
+import { PageSpinner, TableSkeleton } from '@/components/dashboard-component/ui/Skeleton'
+
+const PAGE_SIZE = 10
 
 export default function OccupancyPage() {
-  const { isAuthenticated, loading: authLoading, token } = useAuth()
+  const { isAuthenticated, loading: authLoading, token, isAdmin, isStaff } = useAuth()
   const router = useRouter()
   const [allocations, setAllocations] = useState([])
   const [hostels, setHostels] = useState([])
+  const [totalCapacity, setTotalCapacity] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedHostel, setSelectedHostel] = useState('all')
   const [selectedBlock, setSelectedBlock] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or not admin/staff
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (!authLoading && (!isAuthenticated || !(isAdmin || isStaff))) {
       router.push('/login')
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, isAdmin, isStaff, router])
 
   // Fetch allocations data
   useEffect(() => {
     const fetchAllocations = async () => {
-      if (!isAuthenticated || !token) return
+      if (!isAuthenticated || !token || !(isAdmin || isStaff)) return
 
       try {
         setLoading(true)
@@ -50,8 +58,12 @@ export default function OccupancyPage() {
         const hostelsData = await hostelsRes.json()
 
         // Transform room data to allocations
-        const allocationsData = transformAllocations(roomsData.data || [], hostelsData.data || [])
+        const { allocations: allocationsData, capacity } = transformAllocations(
+          roomsData.data || [],
+          hostelsData.data || []
+        )
         setAllocations(allocationsData)
+        setTotalCapacity(capacity)
         setHostels(hostelsData.data || [])
       } catch (err) {
         console.error('Error fetching allocations:', err)
@@ -61,15 +73,16 @@ export default function OccupancyPage() {
       }
     }
 
-    if (isAuthenticated && token) {
+    if (isAuthenticated && token && (isAdmin || isStaff)) {
       fetchAllocations()
     }
-  }, [isAuthenticated, token])
+  }, [isAuthenticated, token, isAdmin, isStaff])
 
-  // Transform room data to allocation records
+  // Transform room data to allocation records, plus total bed capacity
   const transformAllocations = (rooms, hostelsList) => {
     const allocations = []
     const hostelMap = {}
+    let capacity = 0
 
     hostelsList.forEach((h) => {
       hostelMap[h._id] = h
@@ -77,7 +90,11 @@ export default function OccupancyPage() {
 
     rooms.forEach((room) => {
       const hostel = hostelMap[room.hostelId?._id || room.hostelId]
-      if (!hostel || !room.assignedStudents?.length) return
+      if (!hostel) return
+
+      capacity += room.capacity || 0
+
+      if (!room.assignedStudents?.length) return
 
       room.assignedStudents.forEach((student) => {
         allocations.push({
@@ -96,7 +113,7 @@ export default function OccupancyPage() {
       })
     })
 
-    return allocations
+    return { allocations, capacity }
   }
 
   // Get unique values for filters
@@ -106,10 +123,7 @@ export default function OccupancyPage() {
   }, [allocations])
 
   const blocks = useMemo(() => {
-    const filtered =
-      selectedHostel === 'all'
-        ? allocations
-        : allocations.filter((a) => a.hostel === selectedHostel)
+    const filtered = selectedHostel === 'all' ? allocations : allocations.filter((a) => a.hostel === selectedHostel)
     const unique = [...new Set(filtered.map((a) => a.block))]
     return unique
   }, [allocations, selectedHostel])
@@ -128,137 +142,157 @@ export default function OccupancyPage() {
     })
   }, [allocations, searchTerm, selectedHostel, selectedBlock])
 
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedHostel, selectedBlock])
+
+  const totalPages = Math.max(1, Math.ceil(filteredAllocations.length / PAGE_SIZE))
+  const paginatedAllocations = filteredAllocations.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  )
+
+  // Aggregate stats (computed from the data already fetched — occupied beds vs total capacity)
+  const occupancyRate = totalCapacity > 0 ? Math.round((allocations.length / totalCapacity) * 100) : 0
+
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <PageSpinner label="Loading..." />
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !(isAdmin || isStaff)) {
     return null
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Current Allocations</h1>
-          <p className="text-gray-600">View all student room allocations</p>
+    <div className="space-y-6 mt-4 md:mt-8">
+      <PageHeader
+        icon={BarChart3}
+        title="Current Occupancy"
+        subtitle="View all student room allocations and overall occupancy"
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Aggregate Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Occupied Beds</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{allocations.length}</p>
+            </div>
+            <div className="bg-blue-900/5 p-3 rounded-lg">
+              <Users className="text-blue-900" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Capacity</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{totalCapacity}</p>
+            </div>
+            <div className="bg-blue-900/5 p-3 rounded-lg">
+              <Bed className="text-blue-900" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Occupancy Rate</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{occupancyRate}%</p>
+            </div>
+            <div className="bg-blue-900/5 p-3 rounded-lg">
+              <Percent className="text-blue-900" size={24} />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Error State */}
-        {error && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-            <AlertCircle className="text-blue-600 flex-shrink-0 mt-0.5" size={20} />
-            <p className="text-blue-700 text-sm">{error}</p>
+      {/* Filters */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search */}
+          <div className="sm:col-span-2 lg:col-span-1 relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by name or matric no."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
+            />
           </div>
-        )}
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="sm:col-span-2 lg:col-span-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search by name or matric no."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
+          {/* Hostel Filter */}
+          <select
+            value={selectedHostel}
+            onChange={(e) => {
+              setSelectedHostel(e.target.value)
+              setSelectedBlock('all')
+            }}
+            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white"
+          >
+            <option value="all">All Hostels</option>
+            {hostelNames.map((hostel) => (
+              <option key={hostel} value={hostel}>
+                {hostel}
+              </option>
+            ))}
+          </select>
 
-            {/* Hostel Filter */}
-            <select
-              value={selectedHostel}
-              onChange={(e) => {
-                setSelectedHostel(e.target.value)
-                setSelectedBlock('all')
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
-              <option value="all">All Hostels</option>
-              {hostelNames.map((hostel) => (
-                <option key={hostel} value={hostel}>
-                  {hostel}
-                </option>
-              ))}
-            </select>
-
-            {/* Block Filter */}
-            <select
-              value={selectedBlock}
-              onChange={(e) => setSelectedBlock(e.target.value)}
-              disabled={blocks.length === 0}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:opacity-50"
-            >
-              <option value="all">All Blocks</option>
-              {blocks.map((block) => (
-                <option key={block} value={block}>
-                  {block}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Block Filter */}
+          <select
+            value={selectedBlock}
+            onChange={(e) => setSelectedBlock(e.target.value)}
+            disabled={blocks.length === 0}
+            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white disabled:opacity-50"
+          >
+            <option value="all">All Blocks</option>
+            {blocks.map((block) => (
+              <option key={block} value={block}>
+                {block}
+              </option>
+            ))}
+          </select>
         </div>
+      </div>
 
-        {/* Table */}
-        {loading ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-            <p className="text-gray-600">Loading allocations...</p>
-          </div>
-        ) : filteredAllocations.length > 0 ? (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* Table */}
+      {loading ? (
+        <TableSkeleton rows={6} cols={8} />
+      ) : filteredAllocations.length > 0 ? (
+        <>
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Student
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Matric NO.
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Campus
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Hostel
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Block
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Floor
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Room
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700">
-                      Bed
-                    </th>
+                  <tr className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    <th className="px-6 py-3.5 text-left">Student</th>
+                    <th className="px-6 py-3.5 text-left">Matric No.</th>
+                    <th className="px-6 py-3.5 text-left">Campus</th>
+                    <th className="px-6 py-3.5 text-left">Hostel</th>
+                    <th className="px-6 py-3.5 text-left">Block</th>
+                    <th className="px-6 py-3.5 text-left">Floor</th>
+                    <th className="px-6 py-3.5 text-left">Room</th>
+                    <th className="px-6 py-3.5 text-left">Bed</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredAllocations.map((alloc) => (
-                    <tr key={alloc.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {alloc.studentName}
-                      </td>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedAllocations.map((alloc) => (
+                    <tr key={alloc.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{alloc.studentName}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{alloc.matricNo}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{alloc.campus}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{alloc.hostel}</td>
@@ -271,74 +305,70 @@ export default function OccupancyPage() {
                 </tbody>
               </table>
             </div>
+          </div>
 
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-3">
-              {filteredAllocations.map((alloc) => (
-                <div key={alloc.id} className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                  <div className="space-y-3">
-                    {/* Student Name and Matric */}
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {paginatedAllocations.map((alloc) => (
+              <div key={alloc.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div className="space-y-3">
+                  {/* Student Name and Matric */}
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-sm font-semibold text-gray-900">{alloc.studentName}</p>
+                    <span className="text-xs bg-blue-50 text-blue-900 px-2 py-1 rounded-full">{alloc.matricNo}</span>
+                  </div>
+
+                  {/* Campus and Hostel */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <div className="flex items-start justify-between mb-1">
-                        <p className="text-sm font-semibold text-gray-900">{alloc.studentName}</p>
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                          {alloc.matricNo}
-                        </span>
-                      </div>
+                      <p className="text-xs text-gray-500 uppercase font-medium">Campus</p>
+                      <p className="text-sm font-medium text-gray-900">{alloc.campus}</p>
                     </div>
-
-                    {/* Campus and Hostel */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase font-medium">Campus</p>
-                        <p className="text-sm font-medium text-gray-900">{alloc.campus}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase font-medium">Hostel</p>
-                        <p className="text-sm font-medium text-gray-900">{alloc.hostel}</p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase font-medium">Hostel</p>
+                      <p className="text-sm font-medium text-gray-900">{alloc.hostel}</p>
                     </div>
+                  </div>
 
-                    {/* Location Details */}
-                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200">
-                      <div className="bg-gray-50 p-2 rounded">
-                        <p className="text-xs text-gray-500 uppercase font-medium">Block</p>
-                        <p className="text-sm font-bold text-gray-900">{alloc.block}</p>
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded">
-                        <p className="text-xs text-gray-500 uppercase font-medium">Floor</p>
-                        <p className="text-sm font-bold text-gray-900">{alloc.floor}</p>
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded">
-                        <p className="text-xs text-gray-500 uppercase font-medium">Room</p>
-                        <p className="text-sm font-bold text-gray-900">{alloc.room}</p>
-                      </div>
+                  {/* Location Details */}
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">
+                    <div className="bg-gray-50 p-2 rounded-lg">
+                      <p className="text-xs text-gray-500 uppercase font-medium">Block</p>
+                      <p className="text-sm font-bold text-gray-900">{alloc.block}</p>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded-lg">
+                      <p className="text-xs text-gray-500 uppercase font-medium">Floor</p>
+                      <p className="text-sm font-bold text-gray-900">{alloc.floor}</p>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded-lg">
+                      <p className="text-xs text-gray-500 uppercase font-medium">Room</p>
+                      <p className="text-sm font-bold text-gray-900">{alloc.room}</p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Summary */}
-            <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
-              <p className="text-sm text-gray-600">
-                Showing <span className="font-semibold">{filteredAllocations.length}</span> of{' '}
-                <span className="font-semibold">{allocations.length}</span> allocations
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Eye className="mx-auto text-gray-400 mb-4" size={48} />
-            <p className="text-gray-600 text-lg">No allocations found</p>
-            <p className="text-gray-500 text-sm mt-2">
-              {searchTerm || selectedHostel !== 'all' || selectedBlock !== 'all'
-                ? 'Try adjusting your filters or search term.'
-                : 'No students have been assigned to rooms yet.'}
-            </p>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredAllocations.length}
+            pageSize={PAGE_SIZE}
+          />
+        </>
+      ) : (
+        <EmptyState
+          icon={Eye}
+          title="No allocations found"
+          message={
+            searchTerm || selectedHostel !== 'all' || selectedBlock !== 'all'
+              ? 'Try adjusting your filters or search term.'
+              : 'No students have been assigned to rooms yet.'
+          }
+        />
+      )}
     </div>
   )
 }

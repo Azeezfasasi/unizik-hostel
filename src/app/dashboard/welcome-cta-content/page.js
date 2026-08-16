@@ -1,9 +1,15 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, Eye, EyeOff, ArrowUpDown, Upload } from 'lucide-react'
+import { Plus, Trash2, Edit2, Eye, EyeOff, ArrowUpDown, Upload, LayoutGrid } from 'lucide-react'
 import Image from 'next/image'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { notify } from '@/components/dashboard-component/ui/toast'
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import { TableSkeleton } from '@/components/dashboard-component/ui/Skeleton'
 
-export default function WelcomeCTA() {
+function WelcomeCTAInner() {
   const [sections, setSections] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -19,7 +25,8 @@ export default function WelcomeCTA() {
     isActive: true
   })
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch sections on mount
   useEffect(() => {
@@ -66,15 +73,14 @@ export default function WelcomeCTA() {
             src: result.secure_url
           }
         }))
-        setSuccess('Image uploaded successfully')
-        setTimeout(() => setSuccess(''), 3000)
+        notify.success('Image uploaded successfully')
       } else {
         const error = await response.json()
-        setError(error.error || 'Failed to upload image')
+        notify.error(error.error || 'Failed to upload image')
       }
     } catch (error) {
       console.error('Upload error:', error)
-      setError(error.message || 'Failed to upload image')
+      notify.error(error.message || 'Failed to upload image')
     } finally {
       setUploading(false)
     }
@@ -103,11 +109,10 @@ export default function WelcomeCTA() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setSuccess('')
 
     // Validation
     if (!formData.title || !formData.description1 || !formData.button.label || !formData.button.href) {
-      setError('Please fill in all required fields')
+      notify.error('Please fill in all required fields')
       return
     }
 
@@ -124,16 +129,15 @@ export default function WelcomeCTA() {
       const result = await res.json()
 
       if (result.success) {
-        setSuccess(editingId ? 'Section updated successfully' : 'Section created successfully')
+        notify.success(editingId ? 'Section updated successfully' : 'Section created successfully')
         fetchSections()
         resetForm()
         setShowForm(false)
-        setTimeout(() => setSuccess(''), 3000)
       } else {
-        setError(result.error || 'Operation failed')
+        notify.error(result.error || 'Operation failed')
       }
     } catch (err) {
-      setError('Failed to save section')
+      notify.error('Failed to save section')
       console.error(err)
     }
   }
@@ -145,23 +149,29 @@ export default function WelcomeCTA() {
     window.scrollTo(0, 0)
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this section?')) return
+  const handleDeleteClick = (section) => {
+    setDeleteTarget(section)
+  }
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/welcome/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/welcome/${deleteTarget._id}`, { method: 'DELETE' })
       const result = await res.json()
 
       if (result.success) {
-        setSuccess('Section deleted successfully')
+        notify.success('Section deleted successfully')
         fetchSections()
-        setTimeout(() => setSuccess(''), 3000)
+        setDeleteTarget(null)
       } else {
-        setError(result.error || 'Failed to delete section')
+        notify.error(result.error || 'Failed to delete section')
       }
     } catch (err) {
-      setError('Failed to delete section')
+      notify.error('Failed to delete section')
       console.error(err)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -178,7 +188,7 @@ export default function WelcomeCTA() {
         fetchSections()
       }
     } catch (err) {
-      setError('Failed to toggle section visibility')
+      notify.error('Failed to toggle section visibility')
       console.error(err)
     }
   }
@@ -196,7 +206,7 @@ export default function WelcomeCTA() {
         fetchSections()
       }
     } catch (err) {
-      setError('Failed to reorder section')
+      notify.error('Failed to reorder section')
       console.error(err)
     }
   }
@@ -217,32 +227,30 @@ export default function WelcomeCTA() {
   return (
     <div className="p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome/About Section Management</h1>
-          <button
-            onClick={() => { resetForm(); setShowForm(!showForm) }}
-            className="flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
-          >
-            <Plus size={18} /> {showForm ? 'Cancel' : 'Add Section'}
-          </button>
-        </div>
+        <PageHeader
+          icon={LayoutGrid}
+          title="Welcome/About Section Management"
+          subtitle="Manage the welcome/about sections shown on the homepage"
+          actions={
+            <button
+              onClick={() => { resetForm(); setShowForm(!showForm) }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
+            >
+              <Plus size={18} /> {showForm ? 'Cancel' : 'Add Section'}
+            </button>
+          }
+        />
 
         {/* Messages */}
         {error && (
-          <div className="mb-4 p-3 sm:p-4 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+          <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
             {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 p-3 sm:p-4 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
-            {success}
           </div>
         )}
 
         {/* Form */}
         {showForm && (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-4">
               {editingId ? 'Edit Section' : 'Create New Section'}
             </h2>
@@ -260,7 +268,7 @@ export default function WelcomeCTA() {
                     onChange={handleFormChange}
                     placeholder="e.g., About Unizik Hostel"
                     maxLength={200}
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
 
@@ -275,7 +283,7 @@ export default function WelcomeCTA() {
                     value={formData.order}
                     onChange={handleFormChange}
                     min={0}
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
               </div>
@@ -292,7 +300,7 @@ export default function WelcomeCTA() {
                   placeholder="First paragraph of your content"
                   maxLength={1000}
                   rows={4}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 />
               </div>
 
@@ -308,7 +316,7 @@ export default function WelcomeCTA() {
                   placeholder="Second paragraph of your content (optional)"
                   maxLength={1000}
                   rows={4}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 />
               </div>
 
@@ -347,7 +355,7 @@ export default function WelcomeCTA() {
                     value={formData.image.src}
                     onChange={handleFormChange}
                     placeholder="https://example.com/image.jpg"
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                   <p className="text-xs text-gray-500 mt-2">Leave empty or paste URL directly</p>
                 </div>
@@ -365,7 +373,7 @@ export default function WelcomeCTA() {
                   onChange={handleFormChange}
                   placeholder="Describe the image"
                   maxLength={200}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 />
               </div>
 
@@ -397,7 +405,7 @@ export default function WelcomeCTA() {
                     onChange={handleFormChange}
                     placeholder="e.g., Learn More"
                     maxLength={50}
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
 
@@ -413,7 +421,7 @@ export default function WelcomeCTA() {
                     value={formData.button.href}
                     onChange={handleFormChange}
                     placeholder="e.g., /about-us"
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
               </div>
@@ -438,13 +446,13 @@ export default function WelcomeCTA() {
                 <button
                   type="button"
                   onClick={() => { resetForm(); setShowForm(false) }}
-                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium text-sm"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
                 >
                   {editingId ? 'Update Section' : 'Create Section'}
                 </button>
@@ -454,35 +462,32 @@ export default function WelcomeCTA() {
         )}
 
         {/* Sections List */}
-        <div className="bg-white rounded-lg shadow">
+        {loading ? (
+          <TableSkeleton rows={4} cols={5} />
+        ) : sections.length === 0 ? (
+          <EmptyState
+            icon={LayoutGrid}
+            title="No sections yet"
+            message="Create one to get started!"
+          />
+        ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Order</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Title</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Button</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Status</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Actions</th>
+                <tr className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="px-4 sm:px-6 py-3 text-left">Order</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">Title</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">Button</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">Status</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 sm:px-6 py-4 text-center text-gray-500 text-sm">
-                      Loading sections...
-                    </td>
-                  </tr>
-                ) : sections.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 sm:px-6 py-4 text-center text-gray-500 text-sm">
-                      No sections yet. Create one to get started!
-                    </td>
-                  </tr>
-                ) : (
+              <tbody className="divide-y divide-gray-100">
+                {
                   sections.map((section) => (
-                    <tr key={section._id} className="border-b hover:bg-gray-50">
+                    <tr key={section._id} className="hover:bg-gray-50/60">
                       <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-700">
                         <div className="flex gap-1">
                           <button
@@ -536,7 +541,7 @@ export default function WelcomeCTA() {
                           <Edit2 size={12} /> Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(section._id)}
+                          onClick={() => handleDeleteClick(section)}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
                         >
                           <Trash2 size={12} /> Delete
@@ -544,24 +549,16 @@ export default function WelcomeCTA() {
                       </td>
                     </tr>
                   ))
-                )}
+                }
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden divide-y">
-            {loading ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                Loading sections...
-              </div>
-            ) : sections.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                No sections yet. Create one to get started!
-              </div>
-            ) : (
+          <div className="md:hidden divide-y divide-gray-100">
+            {
               sections.map((section) => (
-                <div key={section._id} className="p-4 border-b hover:bg-gray-50">
+                <div key={section._id} className="p-4 hover:bg-gray-50/60">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
                       <p className="font-semibold text-sm text-gray-900">{section.title}</p>
@@ -614,7 +611,7 @@ export default function WelcomeCTA() {
                       <Edit2 size={12} /> Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(section._id)}
+                      onClick={() => handleDeleteClick(section)}
                       className="flex-1 px-2 py-2 bg-red-50 text-red-600 rounded text-xs font-medium hover:bg-red-100 flex items-center justify-center gap-1"
                     >
                       <Trash2 size={12} /> Delete
@@ -622,9 +619,21 @@ export default function WelcomeCTA() {
                   </div>
                 </div>
               ))
-            )}
+            }
           </div>
         </div>
+        )}
+
+        <ConfirmModal
+          isOpen={!!deleteTarget}
+          title="Delete section?"
+          message={`Are you sure you want to delete "${deleteTarget?.title || 'this section'}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          tone="danger"
+          isLoading={deleting}
+          onConfirm={handleDeleteConfirm}
+          onClose={() => setDeleteTarget(null)}
+        />
 
         {/* Info */}
         <div className="mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -638,5 +647,13 @@ export default function WelcomeCTA() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function WelcomeCTA() {
+  return (
+    <ProtectedRoute allowedRoles={['super admin', 'admin']}>
+      <WelcomeCTAInner />
+    </ProtectedRoute>
   )
 }

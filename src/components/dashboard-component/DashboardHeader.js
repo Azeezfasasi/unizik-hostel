@@ -1,7 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Bell, Menu, ChevronDown, DoorOpen, MessageSquareWarning, Wrench, LogOut, User as UserIcon, Home } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
+
+const NOTIFICATION_META = {
+  'room-request': { icon: DoorOpen, dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-800', label: 'Room Request' },
+  complaint: { icon: MessageSquareWarning, dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800', label: 'Complaint' },
+  damage: { icon: Wrench, dot: 'bg-red-500', badge: 'bg-red-100 text-red-800', label: 'Damage Report' },
+};
 
 export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu }) {
   const { user, logout } = useAuth();
@@ -57,123 +64,77 @@ export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu })
     fetchLogo();
   }, []);
 
-  // Fetch notifications when component mounts and refresh periodically
+  // Hostel-operations notifications: pending room requests, open complaints,
+  // and unresolved damage reports — the actual admin action items for this
+  // system, in place of the leftover association-site (joinus/donations) feed.
+  const isStaffRole = user && ['super admin', 'admin', 'staff'].includes(user.role);
+
+  const loadNotifications = async () => {
+    if (!isStaffRole) return;
+    setNotificationsLoading(true);
+    try {
+      const [requestsRes, complaintsRes, damageRes] = await Promise.all([
+        fetch('/api/room/requests'),
+        fetch('/api/complaints?status=Open'),
+        fetch('/api/facility/damage-reports'),
+      ]);
+
+      const requestsData = requestsRes.ok ? await requestsRes.json() : { data: [] };
+      const complaintsData = complaintsRes.ok ? await complaintsRes.json() : { data: [] };
+      const damageData = damageRes.ok ? await damageRes.json() : { data: [] };
+
+      const pendingRequests = (requestsData.data || []).filter((r) => r.status === 'pending');
+      const openComplaints = complaintsData.data || [];
+      const pendingDamage = (damageData.data || []).filter(
+        (d) => (d.repairStatus || '').toLowerCase() === 'pending'
+      );
+
+      const combined = [
+        ...pendingRequests.map((item) => ({
+          id: item._id,
+          type: 'room-request',
+          title: `Room Request: ${item.student?.firstName || ''} ${item.student?.lastName || ''}`.trim(),
+          message: item.room?.roomNumber ? `Room ${item.room.roomNumber}` : 'Awaiting review',
+          timestamp: item.createdAt,
+          href: '/dashboard/all-room-requests',
+        })),
+        ...openComplaints.map((item) => ({
+          id: item._id,
+          type: 'complaint',
+          title: `Complaint: ${item.category || 'General'}`,
+          message: item.description?.slice(0, 60) || 'New complaint submitted',
+          timestamp: item.createdAt,
+          href: '/dashboard/manage-complaints',
+        })),
+        ...pendingDamage.map((item) => ({
+          id: item._id,
+          type: 'damage',
+          title: `Damage Report: ${item.facilityName}`,
+          message: item.description?.slice(0, 60) || 'Awaiting repair',
+          timestamp: item.reportedAt,
+          href: '/dashboard/all-damage-reports',
+        })),
+      ];
+
+      combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setNotifications(combined);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // Fetch on mount and refresh periodically
   useEffect(() => {
-    const fetchNotifications = async () => {
-      setNotificationsLoading(true);
-      try {
-        const [registrationRes, welcomeRes, donationsRes] = await Promise.all([
-          fetch('/api/joinus?status=pending&limit=5'),
-          fetch('/api/welcome?limit=5'),
-          fetch('/api/donations?status=pending&limit=5')
-        ]);
-
-        const registrationData = registrationRes.ok ? await registrationRes.json() : { data: [] };
-        const welcomeData = welcomeRes.ok ? await welcomeRes.json() : { data: [] };
-        const donationsData = donationsRes.ok ? await donationsRes.json() : { donations: [] };
-
-        const combinedNotifications = [
-          ...(registrationData.data || []).map(item => ({
-            id: item._id,
-            type: 'registration',
-            title: `Registration Request: ${item.firstName} ${item.lastName}`,
-            message: item.email,
-            timestamp: item.createdAt,
-            data: item
-          })),
-          ...(welcomeData.data || []).map(item => ({
-            id: item._id,
-            type: 'welcome',
-            title: `Welcome Form: ${item.title}`,
-            message: item.description1 || 'New submission',
-            timestamp: item.createdAt,
-            data: item
-          })),
-          ...(donationsData.donations || []).map(item => ({
-            id: item._id,
-            type: 'donation',
-            title: `New Donation: ${item.donationType || 'Donation'}`,
-            message: `${item.currency} ${item.amount}`,
-            timestamp: item.createdAt,
-            data: item
-          }))
-        ];
-
-        // Sort by timestamp, newest first
-        combinedNotifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        setNotifications(combinedNotifications);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setNotificationsLoading(false);
-      }
-    };
-
-    // Fetch on mount
-    fetchNotifications();
-
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.role]);
 
-  // Refresh notifications when dropdown opens
+  // Refresh when dropdown opens
   useEffect(() => {
-    if (!notificationDropdownOpen) return;
-
-    const fetchNotifications = async () => {
-      setNotificationsLoading(true);
-      try {
-        const [registrationRes, contactRes, donationsRes] = await Promise.all([
-          fetch('/api/joinus?status=pending&limit=5'),
-          fetch('/api/contact?status=pending&limit=5'),
-          fetch('/api/donations?status=pending&limit=5')
-        ]);
-
-        const registrationData = registrationRes.ok ? await registrationRes.json() : { data: [] };
-        const contactData = contactRes.ok ? await contactRes.json() : { data: [] };
-        const donationsData = donationsRes.ok ? await donationsRes.json() : { donations: [] };
-
-        const combinedNotifications = [
-          ...(registrationData.data || []).map(item => ({
-            id: item._id,
-            type: 'registration',
-            title: `Registration Request: ${item.firstName} ${item.lastName}`,
-            message: item.email,
-            timestamp: item.createdAt,
-            data: item
-          })),
-          ...(contactData.data || []).map(item => ({
-            id: item._id,
-            type: 'contact',
-            title: `Contact Form: ${item.subject}`,
-            message: item.email,
-            timestamp: item.createdAt,
-            data: item
-          })),
-          ...(donationsData.donations || []).map(item => ({
-            id: item._id,
-            type: 'donation',
-            title: `New Donation: ${item.donationType || 'Donation'}`,
-            message: `${item.currency} ${item.amount}`,
-            timestamp: item.createdAt,
-            data: item
-          }))
-        ];
-
-        // Sort by timestamp, newest first
-        combinedNotifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        setNotifications(combinedNotifications);
-        console.log('Notifications loaded:', combinedNotifications);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setNotificationsLoading(false);
-      }
-    };
-
-    fetchNotifications();
+    if (notificationDropdownOpen) loadNotifications();
   }, [notificationDropdownOpen]);
 
   const handleLogout = () => {
@@ -192,9 +153,7 @@ export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu })
               onClick={onToggleMobileMenu}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 lg:hidden"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
+              <Menu className="w-5 h-5" />
             </button>
 
             <button
@@ -202,9 +161,7 @@ export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu })
               onClick={onToggleSidebar}
               className="hidden lg:inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
+              <Menu className="w-5 h-5" />
             </button>
 
             {/* Dynamic logo */}
@@ -234,132 +191,125 @@ export default function DashboardHeader({ onToggleSidebar, onToggleMobileMenu })
           </div>
 
           {/* Notifications section */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3 sm:gap-6">
+            {isStaffRole && (
             <div className="relative" ref={notificationRef}>
-              <button 
-                aria-label="Notifications" 
+              <button
+                aria-label="Notifications"
                 onClick={() => setNotificationDropdownOpen((open) => !open)}
-                className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-900 relative"
+                className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-900 relative transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                </svg>
+                <Bell className="w-5 h-5" />
                 {notifications.length > 0 && (
-                  <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                    {notifications.length}
+                  <span className="absolute top-0.5 right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full ring-2 ring-white">
+                    {notifications.length > 9 ? '9+' : notifications.length}
                   </span>
                 )}
               </button>
 
               {/* Notifications Dropdown */}
               {notificationDropdownOpen && (
-                <div className="fixed md:absolute md:right-0 left-0 right-0 md:left-auto dtop-auto md:top-full md:mt-2 top-[80px] md:bottom-auto w-full md:w-80 bg-white border border-gray-200 rounded-t-md md:rounded-md shadow-lg z-50 animate-fade-in max-h-96 overflow-y-auto md:max-h-96 mx-0 md:mx-0">
-                  <div className="p-4 border-b border-gray-200 bg-gray-50">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                <div className="fixed md:absolute md:right-0 left-0 right-0 md:left-auto md:top-full md:mt-2 top-[72px] md:bottom-auto w-full md:w-96 bg-white border border-gray-100 rounded-t-2xl md:rounded-2xl shadow-xl z-50 animate-fade-in max-h-[26rem] overflow-y-auto">
+                  <div className="p-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur">
+                    <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
+                    {notifications.length > 0 && (
+                      <span className="text-xs font-medium text-gray-400">{notifications.length} pending</span>
+                    )}
                   </div>
-                  
+
                   {notificationsLoading ? (
-                    <div className="p-4 text-center text-gray-500">Loading...</div>
+                    <div className="p-6 text-center text-sm text-gray-400">Loading…</div>
                   ) : notifications.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">No new notifications</div>
+                    <div className="p-8 text-center">
+                      <p className="text-sm text-gray-400">You&apos;re all caught up 🎉</p>
+                    </div>
                   ) : (
-                    <ul className="divide-y divide-gray-200">
-                      {notifications.map((notification) => (
-                        <li key={notification.id} className="hover:bg-gray-50 transition">
-                          <Link 
-                            href={notification.type === 'registration' 
-                              ? '/dashboard/member-registration-request' 
-                              : notification.type === 'donation'
-                              ? '/dashboard/all-donations'
-                              : '/dashboard/contact-form-responses'}
-                            className="block px-4 py-3"
-                            onClick={() => setNotificationDropdownOpen(false)}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                                notification.type === 'registration' ? 'bg-blue-500' : notification.type === 'donation' ? 'bg-purple-500' : 'bg-green-500'
-                              }`}></div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">
-                                  {notification.title}
-                                </p>
-                                <p className="text-sm text-gray-500 truncate">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {new Date(notification.timestamp).toLocaleDateString()}
-                                </p>
+                    <ul className="divide-y divide-gray-50">
+                      {notifications.slice(0, 8).map((notification) => {
+                        const meta = NOTIFICATION_META[notification.type] || NOTIFICATION_META['room-request'];
+                        const Icon = meta.icon;
+                        return (
+                          <li key={`${notification.type}-${notification.id}`} className="hover:bg-gray-50 transition-colors">
+                            <Link
+                              href={notification.href}
+                              className="block px-4 py-3"
+                              onClick={() => setNotificationDropdownOpen(false)}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white ${meta.dot}`}>
+                                  <Icon className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{notification.title}</p>
+                                  <p className="text-sm text-gray-500 truncate">{notification.message}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">
+                                    {notification.timestamp ? new Date(notification.timestamp).toLocaleDateString() : ''}
+                                  </p>
+                                </div>
+                                <span className={`text-[11px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${meta.badge}`}>
+                                  {meta.label}
+                                </span>
                               </div>
-                              <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
-                                notification.type === 'registration' 
-                                  ? 'bg-blue-100 text-blue-800' 
-                                  : notification.type === 'donation'
-                                  ? 'bg-purple-100 text-purple-800'
-                                  : 'bg-green-100 text-green-800'
-                              }`}>
-                                {notification.type === 'registration' ? 'Registration' : notification.type === 'donation' ? 'Donation' : 'Contact'}
-                              </span>
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
+                            </Link>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
-                  
-                  <div className="p-3 border-t border-gray-200 bg-gray-50">
-                    <Link 
-                      href="/dashboard/all-notifications" 
-                      className="block text-center text-sm font-medium text-blue-600 hover:text-blue-800 py-2"
+
+                  <div className="p-3 border-t border-gray-100 bg-gray-50/60 rounded-b-2xl">
+                    <Link
+                      href="/dashboard/all-notifications"
+                      className="block text-center text-sm font-medium text-blue-900 hover:text-blue-700 py-1.5"
                       onClick={() => setNotificationDropdownOpen(false)}
                     >
-                      View All Notifications
+                      View all notifications
                     </Link>
                   </div>
                 </div>
               )}
             </div>
+            )}
 
             <div className="relative" ref={dropdownRef}>
               <button
-                className="flex items-center gap-3 p-1 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                className="flex items-center gap-2.5 p-1 pr-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-900 transition-colors"
                 onClick={() => setDropdownOpen((open) => !open)}
                 aria-haspopup="true"
                 aria-expanded={dropdownOpen}
               >
-                <div className="rounded-[50%] overflow-hidden">
-                  <Image src={avatar} alt="User avatar" width={32} height={32} className="object-cover h-10 w-10" />
+                <div className="rounded-full overflow-hidden ring-2 ring-gray-100">
+                  <Image src={avatar} alt="User avatar" width={36} height={36} className="object-cover h-9 w-9" />
                 </div>
-                <div className='flex flex-col items-start'>
-                  <span className="hidden sm:block text-sm text-gray-700">{fullName || 'User'}</span>
-                  <span className="hidden sm:block text-sm text-gray-700">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+                <div className="hidden sm:flex flex-col items-start">
+                  <span className="text-sm font-medium text-gray-800 leading-tight">{fullName || 'User'}</span>
+                  <span className="text-xs text-gray-400 leading-tight">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
                 </div>
-                <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 animate-fade-in">
-                  <ul className="py-1">
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-fade-in overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-50">
+                    <p className="text-sm font-medium text-gray-900 truncate">{fullName || 'User'}</p>
+                    <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                  </div>
+                  <ul className="py-1.5">
                     <li>
-                      <Link href="/" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition w-full text-left">Back to Home</Link>
+                      <Link href="/dashboard/my-profile" className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition w-full text-left" onClick={() => setDropdownOpen(false)}>
+                        <UserIcon className="w-4 h-4 text-gray-400" /> My Profile
+                      </Link>
                     </li>
-                    {user?.role === 'admin' || user?.role === 'committee' || user?.role === 'it-support' ? (
                     <li>
-                      <Link href="https://mail.zoho.com/" target='_blank' className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition w-full text-left">Access Zoho Email</Link>
-                    </li>
-                    ) : null}
-                    {user?.role === 'admin' || user?.role === 'committee' || user?.role === 'it-support' ? (
-                    <li>
-                      <Link href="/dashboard/member-registration-request" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition w-full text-left">Registration Requests</Link>
-                    </li>
-                    ) : null}
-                    {user?.role === 'admin' || user?.role === 'committee' || user?.role === 'it-support' ? (
-                    <li>
-                      <Link href="/dashboard/my-profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition w-full text-left">Profile</Link>
-                    </li>
-                    ) : null}
-                    <li>
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition">Logout</button>
+                      <Link href="/" className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition w-full text-left" onClick={() => setDropdownOpen(false)}>
+                        <Home className="w-4 h-4 text-gray-400" /> Back to Website
+                      </Link>
                     </li>
                   </ul>
+                  <div className="border-t border-gray-50 py-1.5">
+                    <button onClick={handleLogout} className="flex items-center gap-2.5 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                      <LogOut className="w-4 h-4" /> Logout
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

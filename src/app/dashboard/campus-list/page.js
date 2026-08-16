@@ -1,19 +1,28 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { MapPin, Building2, Users, Bed, Search, AlertCircle, Loader, Eye, Edit2, Trash2, X, Save } from 'lucide-react'
+import { MapPin, Building2, Search, AlertCircle, Loader, Eye, Edit2, Trash2, X, Plus } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import { notify } from '@/components/dashboard-component/ui/toast'
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal'
+import Pagination from '@/components/dashboard-component/ui/Pagination'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton'
+
+const CAMPUSES_PER_PAGE = 9
 
 export default function CampusList() {
-  const { isAuthenticated, loading: authLoading, token } = useAuth()
+  const { isAuthenticated, loading: authLoading, token, user } = useAuth()
   const router = useRouter()
   const [campusData, setCampusData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('name')
-  
+  const [currentPage, setCurrentPage] = useState(1)
+
   // Modal states
   const [viewModal, setViewModal] = useState({ isOpen: false, campus: null })
   const [editModal, setEditModal] = useState({ isOpen: false, campus: null, editData: null })
@@ -23,12 +32,12 @@ export default function CampusList() {
   const [isSaving, setIsSaving] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or not admin
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (!authLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'super admin'))) {
       router.push('/login')
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, user?.role, router])
 
   // Fetch campuses data
   useEffect(() => {
@@ -63,12 +72,6 @@ export default function CampusList() {
         if (!hostelsData.success) {
           throw new Error('Failed to fetch hostels')
         }
-
-        // Debug logging
-        console.log('Hostels Response:', hostelsData)
-        console.log('Rooms Response:', roomsData)
-        console.log('Rooms Data Array:', roomsData.data)
-        console.log('Total Rooms:', roomsData.data?.length || 0)
 
         // Transform data to get campuses with their hostels and bed stats
         const campuses = transformCampusData(hostelsData.data, roomsData.data || [])
@@ -109,8 +112,6 @@ export default function CampusList() {
       })
     }
 
-    console.log('Rooms by Hostel:', roomsByHostel)
-
     const campusMap = {}
 
     hostels.forEach((hostel) => {
@@ -131,9 +132,7 @@ export default function CampusList() {
       // Calculate bed stats for this hostel - use string version of ID
       const hostelIdStr = hostel._id.toString()
       const hostelRooms = roomsByHostel[hostelIdStr] || []
-      
-      console.log(`Hostel ${hostel.name} (${hostelIdStr}):`, hostelRooms.length, 'rooms')
-      
+
       const availableBeds = hostelRooms.reduce((sum, room) => {
         const occupied = room.assignedStudents ? room.assignedStudents.length : 0
         return sum + (room.capacity - occupied)
@@ -172,7 +171,7 @@ export default function CampusList() {
   // Handle save edit
   const handleSaveEdit = async () => {
     if (!editModal.editData.name.trim()) {
-      alert('Campus name is required')
+      notify.error('Campus name is required')
       return
     }
 
@@ -215,10 +214,10 @@ export default function CampusList() {
       ))
 
       setEditModal({ isOpen: false, campus: null, editData: null })
-      alert('Campus renamed successfully!')
+      notify.success('Campus renamed successfully!')
     } catch (err) {
       console.error('Error saving campus:', err)
-      alert('Failed to save campus: ' + err.message)
+      notify.error('Failed to save campus: ' + err.message)
     } finally {
       setIsSaving(false)
     }
@@ -250,10 +249,10 @@ export default function CampusList() {
       // Update local state
       setCampusData(prev => prev.filter(c => c.id !== deleteModal.campus.id))
       setDeleteModal({ isOpen: false, campus: null })
-      alert('Campus deleted successfully!')
+      notify.success('Campus deleted successfully!')
     } catch (err) {
       console.error('Error deleting campus:', err)
-      alert('Failed to delete campus: ' + err.message)
+      notify.error('Failed to delete campus: ' + err.message)
     } finally {
       setIsDeleting(false)
     }
@@ -267,7 +266,7 @@ export default function CampusList() {
   // Handle save new campus
   const handleSaveNewCampus = async () => {
     if (!addModal.newCampusData.name.trim()) {
-      alert('Campus name is required')
+      notify.error('Campus name is required')
       return
     }
 
@@ -328,10 +327,10 @@ export default function CampusList() {
         }
       }
 
-      alert('Campus created successfully!')
+      notify.success('Campus created successfully!')
     } catch (err) {
       console.error('Error creating campus:', err)
-      alert('Failed to create campus: ' + err.message)
+      notify.error('Failed to create campus: ' + err.message)
     } finally {
       setIsAdding(false)
     }
@@ -359,46 +358,47 @@ export default function CampusList() {
     return filtered
   }, [campusData, searchTerm, sortBy])
 
+  // Reset to page 1 whenever the filtered/sorted result set changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, sortBy, campusData.length])
+
+  const totalPages = Math.ceil(filteredAndSorted.length / CAMPUSES_PER_PAGE)
+  const paginatedCampuses = filteredAndSorted.slice(
+    (currentPage - 1) * CAMPUSES_PER_PAGE,
+    currentPage * CAMPUSES_PER_PAGE
+  )
+
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <PageSpinner label="Loading..." />
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'super admin')) {
     return null
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Campus Management</h1>
-              <p className="text-gray-600">Manage hostels and allocations across campuses</p>
-            </div>
-            <button 
-              onClick={handleAddCampus}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              + Add Campus
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          icon={MapPin}
+          title="Campus Management"
+          subtitle="Manage hostels and allocations across campuses"
+          actions={
+            <button
+              onClick={handleAddCampus}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
+            >
+              <Plus size={16} />
+              Add Campus
+            </button>
+          }
+        />
+
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 flex items-start gap-4">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 flex items-start gap-4">
             <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
             <div>
               <h3 className="text-sm font-semibold text-red-900 mb-1">Error Loading Data</h3>
@@ -408,17 +408,17 @@ export default function CampusList() {
         )}
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-8">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
                 placeholder="Search campuses..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
               />
             </div>
 
@@ -426,7 +426,7 @@ export default function CampusList() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white"
             >
               <option value="name">Sort by Name</option>
               <option value="hostels">Sort by Hostels Count</option>
@@ -439,29 +439,36 @@ export default function CampusList() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm p-6 h-80 animate-pulse"></div>
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-80 animate-pulse"></div>
             ))}
           </div>
-        ) : filteredAndSorted.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAndSorted.map((campus) => (
-              <CampusCard 
-                key={campus.id} 
-                campus={campus}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={() => setDeleteModal({ isOpen: true, campus })}
-              />
-            ))}
-          </div>
+        ) : paginatedCampuses.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedCampuses.map((campus) => (
+                <CampusCard
+                  key={campus.id}
+                  campus={campus}
+                  onView={handleView}
+                  onEdit={handleEdit}
+                  onDelete={() => setDeleteModal({ isOpen: true, campus })}
+                />
+              ))}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filteredAndSorted.length}
+              pageSize={CAMPUSES_PER_PAGE}
+            />
+          </>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <MapPin size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600 text-lg">No campuses found.</p>
-            <p className="text-gray-500 text-sm mt-2">
-              {searchTerm ? 'Try adjusting your search.' : 'Add a new campus to get started.'}
-            </p>
-          </div>
+          <EmptyState
+            icon={MapPin}
+            title="No campuses found"
+            message={searchTerm ? 'Try adjusting your search.' : 'Add a new campus to get started.'}
+          />
         )}
       </div>
 
@@ -484,12 +491,19 @@ export default function CampusList() {
       />
 
       {/* Delete Modal */}
-      <DeleteModal
+      <ConfirmModal
         isOpen={deleteModal.isOpen}
-        campus={deleteModal.campus}
+        title="Delete Campus"
+        message={
+          deleteModal.campus
+            ? `Are you sure you want to delete "${deleteModal.campus.name}"? This will affect ${deleteModal.campus.hostels.length} hostel${deleteModal.campus.hostels.length !== 1 ? 's' : ''} and cannot be undone.`
+            : ''
+        }
+        confirmLabel="Delete"
+        tone="danger"
+        isLoading={isDeleting}
         onConfirm={handleDelete}
         onClose={() => setDeleteModal({ isOpen: false, campus: null })}
-        isDeleting={isDeleting}
       />
 
       {/* Add Campus Modal */}
@@ -507,17 +521,17 @@ export default function CampusList() {
 
 // Campus Card Component
 function CampusCard({ campus, onView, onEdit, onDelete }) {
-  const occupancyRate = campus.totalCapacity > 0 
+  const occupancyRate = campus.totalCapacity > 0
     ? Math.round((campus.totalOccupancy / campus.totalCapacity) * 100)
     : 0
 
   return (
-    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+      <div className="bg-blue-900 p-6 text-white">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1">
-            <div className="bg-blue-500 p-2 rounded-lg">
+            <div className="bg-white/10 p-2 rounded-lg">
               <MapPin size={24} />
             </div>
             <div className="flex-1 min-w-0">
@@ -552,7 +566,7 @@ function CampusCard({ campus, onView, onEdit, onDelete }) {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="h-2 rounded-full bg-gradient-to-r from-green-500 to-yellow-500 transition-all"
+              className="h-2 rounded-full bg-blue-900 transition-all"
               style={{ width: `${occupancyRate}%` }}
             />
           </div>
@@ -563,9 +577,9 @@ function CampusCard({ campus, onView, onEdit, onDelete }) {
           <h4 className="text-sm font-semibold text-gray-900 mb-3">Hostels</h4>
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {campus.hostels.slice(0, 3).map((hostel, idx) => (
-              <div key={idx} className="bg-gray-50 rounded p-2 border border-gray-200">
+              <div key={idx} className="bg-gray-50 rounded-lg p-2 border border-gray-100">
                 <div className="flex items-start gap-2 text-xs mb-2">
-                  <Building2 className="text-blue-600 flex-shrink-0 mt-0.5" size={14} />
+                  <Building2 className="text-blue-900 flex-shrink-0 mt-0.5" size={14} />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 truncate">{hostel.name}</p>
                     <p className="text-gray-500 text-xs">{hostel.block} • {hostel.location}</p>
@@ -584,31 +598,31 @@ function CampusCard({ campus, onView, onEdit, onDelete }) {
               </div>
             ))}
             {campus.hostels.length > 3 && (
-              <p className="text-xs text-blue-600 font-medium">+{campus.hostels.length - 3} more</p>
+              <p className="text-xs text-blue-900 font-medium">+{campus.hostels.length - 3} more</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Footer Actions */}
-      <div className="border-t border-gray-200 p-4 flex gap-2">
-        <button 
+      <div className="border-t border-gray-100 p-4 flex gap-2">
+        <button
           onClick={() => onView(campus)}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-900 bg-blue-900/5 rounded-lg hover:bg-blue-900/10 transition-colors"
         >
           <Eye size={16} />
           View
         </button>
-        <button 
+        <button
           onClick={() => onEdit(campus)}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <Edit2 size={16} />
           Edit
         </button>
-        <button 
+        <button
           onClick={() => onDelete()}
-          className="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+          className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
         >
           <Trash2 size={16} />
         </button>
@@ -622,14 +636,14 @@ function ViewModal({ isOpen, campus, onClose }) {
   if (!isOpen || !campus) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between sticky top-0">
+        <div className="bg-blue-900 text-white p-6 flex items-center justify-between sticky top-0">
           <h2 className="text-2xl font-bold">{campus.name}</h2>
           <button
             onClick={onClose}
-            className="text-white hover:bg-blue-700 p-2 rounded-full transition"
+            className="text-white hover:bg-white/10 p-2 rounded-full transition"
           >
             <X size={24} />
           </button>
@@ -639,9 +653,9 @@ function ViewModal({ isOpen, campus, onClose }) {
         <div className="p-6 space-y-6">
           {/* Campus Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
               <p className="text-xs text-gray-600 font-medium mb-2">HOSTELS</p>
-              <p className="text-3xl font-bold text-blue-600">{campus.hostels.length}</p>
+              <p className="text-3xl font-bold text-blue-900">{campus.hostels.length}</p>
             </div>
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
               <p className="text-xs text-gray-600 font-medium mb-2">AVAILABLE BEDS</p>
@@ -658,9 +672,9 @@ function ViewModal({ isOpen, campus, onClose }) {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Hostels in {campus.name}</h3>
             <div className="space-y-3">
               {campus.hostels.map((hostel, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                   <div className="flex items-start gap-3 mb-3">
-                    <Building2 className="text-blue-600 flex-shrink-0 mt-1" size={20} />
+                    <Building2 className="text-blue-900 flex-shrink-0 mt-1" size={20} />
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-gray-900">{hostel.name}</h4>
                       <div className="flex gap-4 mt-1 text-sm text-gray-600 flex-wrap">
@@ -692,10 +706,10 @@ function ViewModal({ isOpen, campus, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 border-t border-gray-200 p-6">
+        <div className="bg-gray-50 border-t border-gray-100 p-6">
           <button
             onClick={onClose}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
           >
             Close
           </button>
@@ -710,15 +724,15 @@ function EditModal({ isOpen, campus, editData, onEditDataChange, onSave, onClose
   if (!isOpen || !campus || !editData) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between">
+        <div className="bg-blue-900 text-white p-6 flex items-center justify-between">
           <h2 className="text-xl font-bold">Edit Campus</h2>
           <button
             onClick={onClose}
             disabled={isSaving}
-            className="text-white hover:bg-blue-700 p-2 rounded-full transition disabled:opacity-50"
+            className="text-white hover:bg-white/10 p-2 rounded-full transition disabled:opacity-50"
           >
             <X size={24} />
           </button>
@@ -732,87 +746,33 @@ function EditModal({ isOpen, campus, editData, onEditDataChange, onSave, onClose
               type="text"
               value={editData.name}
               onChange={(e) => onEditDataChange({ ...editData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
               disabled={isSaving}
             />
           </div>
 
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
             <p className="text-sm text-gray-600"><span className="font-medium">Hostels:</span> {campus.hostels.length}</p>
             <p className="text-sm text-gray-600"><span className="font-medium">Available Beds:</span> {campus.totalCapacity - campus.totalOccupancy}</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 border-t border-gray-200 p-6 flex gap-3">
+        <div className="bg-gray-50 border-t border-gray-100 p-6 flex gap-3">
           <button
             onClick={onClose}
             disabled={isSaving}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 font-medium"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
             disabled={isSaving}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 font-medium"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
           >
             {isSaving && <Loader size={18} className="animate-spin" />}
             {isSaving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Delete Modal Component
-function DeleteModal({ isOpen, campus, onConfirm, onClose, isDeleting }) {
-  if (!isOpen || !campus) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Delete Campus</h2>
-          <button
-            onClick={onClose}
-            disabled={isDeleting}
-            className="text-white hover:bg-red-700 p-2 rounded-full transition disabled:opacity-50"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
-          <p className="text-gray-700 mb-4">
-            Are you sure you want to delete <span className="font-semibold">{campus.name}</span>? This action cannot be undone.
-          </p>
-          <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-            <p className="text-sm text-red-900">
-              <span className="font-medium">Warning:</span> This will affect {campus.hostels.length} hostel{campus.hostels.length !== 1 ? 's' : ''}.
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="bg-gray-50 border-t border-gray-200 p-6 flex gap-3">
-          <button
-            onClick={onClose}
-            disabled={isDeleting}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-50 font-medium"
-          >
-            {isDeleting && <Loader size={18} className="animate-spin" />}
-            {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>
@@ -825,12 +785,12 @@ function AddCampusModal({ isOpen, newCampusData, onDataChange, onSave, onClose, 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex items-center justify-between">
+        <div className="bg-blue-900 text-white p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-green-500 p-2 rounded-lg">
+            <div className="bg-white/10 p-2 rounded-lg">
               <MapPin size={24} />
             </div>
             <h2 className="text-xl font-bold">Add New Campus</h2>
@@ -838,7 +798,7 @@ function AddCampusModal({ isOpen, newCampusData, onDataChange, onSave, onClose, 
           <button
             onClick={onClose}
             disabled={isAdding}
-            className="text-white hover:bg-green-700 p-2 rounded-full transition disabled:opacity-50"
+            className="text-white hover:bg-white/10 p-2 rounded-full transition disabled:opacity-50"
           >
             <X size={24} />
           </button>
@@ -853,33 +813,33 @@ function AddCampusModal({ isOpen, newCampusData, onDataChange, onSave, onClose, 
               placeholder="e.g., Main Campus, North Campus, South Campus"
               value={newCampusData.name}
               onChange={(e) => onDataChange({ ...newCampusData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
               disabled={isAdding}
               autoFocus
             />
             <p className="text-xs text-gray-500 mt-2">Enter a unique name for your new campus.</p>
           </div>
 
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
             <p className="text-sm text-gray-600">
-              <span className="font-medium">📌 Note:</span> A default hostel will be created with this campus.
+              <span className="font-medium">Note:</span> A default hostel will be created with this campus.
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 border-t border-gray-200 p-6 flex gap-3">
+        <div className="bg-gray-50 border-t border-gray-100 p-6 flex gap-3">
           <button
             onClick={onClose}
             disabled={isAdding}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition disabled:opacity-50 font-medium"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
             disabled={isAdding || !newCampusData.name.trim()}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition disabled:opacity-50 disabled:bg-gray-400 font-medium"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
           >
             {isAdding && <Loader size={18} className="animate-spin" />}
             {isAdding ? 'Creating...' : 'Create Campus'}

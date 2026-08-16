@@ -1,38 +1,32 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Home, Eye, Edit2, Trash2, X, Plus, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCampus } from '@/context/CampusContext';
+import { notify } from '@/components/dashboard-component/ui/toast';
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal';
+import Pagination from '@/components/dashboard-component/ui/Pagination';
+import PageHeader from '@/components/dashboard-component/ui/PageHeader';
+import EmptyState from '@/components/dashboard-component/ui/EmptyState';
+import StatusBadge from '@/components/dashboard-component/ui/StatusBadge';
 
 // Modal Components
 function ViewModal({ room, isOpen, onClose }) {
   if (!isOpen) return null;
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'available':
-        return 'bg-green-100 text-green-800';
-      case 'occupied':
-        return 'bg-blue-100 text-blue-800';
-      case 'under-maintenance':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const occupancyPercentage = room?.capacity ? Math.round((room.currentOccupancy / room.capacity) * 100) : 0;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg">
+        <div className="bg-blue-900 text-white p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold">Room Details</h2>
           <button
             onClick={onClose}
-            className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-blue-700 p-2 rounded-full transition"
+            className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-white/10 p-2 rounded-full transition"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
 
@@ -71,7 +65,7 @@ function ViewModal({ room, isOpen, onClose }) {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all"
+                className="bg-blue-900 h-2 rounded-full transition-all"
                 style={{ width: `${occupancyPercentage}%` }}
               />
             </div>
@@ -81,9 +75,7 @@ function ViewModal({ room, isOpen, onClose }) {
           {/* Status */}
           <div>
             <p className="text-xs text-gray-600 font-medium mb-2">STATUS</p>
-            <span className={`inline-block px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(room?.status)}`}>
-              {room?.status?.replaceAll('-', ' ').toUpperCase()}
-            </span>
+            <StatusBadge status={room?.status} />
           </div>
 
           {/* Facilities */}
@@ -102,7 +94,7 @@ function ViewModal({ room, isOpen, onClose }) {
 
           <button
             onClick={onClose}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm sm:text-base"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
           >
             Close
           </button>

@@ -1,14 +1,21 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, Save, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Trash2, Edit2, Save, ArrowUp, ArrowDown, MessageSquareQuote, Star } from 'lucide-react'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { notify } from '@/components/dashboard-component/ui/toast'
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton'
 
-export default function TestimonialContent() {
+function TestimonialContentInner() {
   const [testimonials, setTestimonials] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [editingId, setEditingId] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetchTestimonials()
@@ -34,7 +41,7 @@ export default function TestimonialContent() {
 
   const handleSave = async (testimonial) => {
     if (!testimonial.name || !testimonial.position || !testimonial.message) {
-      setError('Please fill in all required fields')
+      notify.error('Please fill in all required fields')
       return
     }
 
@@ -54,43 +61,47 @@ export default function TestimonialContent() {
       const result = await res.json()
 
       if (result.success) {
-        setSuccess('Testimonial saved successfully!')
+        notify.success('Testimonial saved successfully!')
         await fetchTestimonials()
         setEditingId(null)
-        setTimeout(() => setSuccess(''), 3000)
       } else {
-        setError(result.error || 'Failed to save')
+        notify.error(result.error || 'Failed to save')
       }
     } catch (err) {
-      setError('Failed to save testimonial')
+      notify.error('Failed to save testimonial')
       console.error(err)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!id) {
-      setError('Cannot delete unsaved testimonial. Please save first.')
+  const handleDeleteClick = (testimonial) => {
+    if (!testimonial._id) {
+      notify.error('Cannot delete unsaved testimonial. Please save first.')
       return
     }
+    setDeleteTarget(testimonial)
+  }
 
-    if (!confirm('Are you sure you want to delete this testimonial?')) return
-
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget?._id) return
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/testimonial/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/testimonial/${deleteTarget._id}`, { method: 'DELETE' })
       const result = await res.json()
 
       if (result.success) {
-        setSuccess('Testimonial deleted successfully!')
+        notify.success('Testimonial deleted successfully!')
         await fetchTestimonials()
-        setTimeout(() => setSuccess(''), 3000)
+        setDeleteTarget(null)
       } else {
-        setError(result.error || 'Failed to delete')
+        notify.error(result.error || 'Failed to delete')
       }
     } catch (err) {
-      setError('Failed to delete testimonial')
+      notify.error('Failed to delete testimonial')
       console.error(err)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -134,47 +145,46 @@ export default function TestimonialContent() {
   }
 
   if (loading) {
-    return <div className="p-6"><p className="text-gray-600">Loading...</p></div>
+    return <PageSpinner label="Loading testimonials..." />
   }
 
   return (
-    <div className="p-0 md:p-6 max-w-7xl mx-auto">
-      <h1 className="text-[24px] md:text-3xl font-bold text-gray-900 mb-6">Testimonials Management</h1>
+    <div className="p-0 md:p-6 max-w-7xl mx-auto space-y-6">
+      <PageHeader
+        icon={MessageSquareQuote}
+        title="Testimonials Management"
+        subtitle="Manage the testimonials shown on the homepage"
+        actions={
+          <button
+            onClick={() => {
+              const newTestimonial = {
+                name: '',
+                position: '',
+                message: '',
+                rating: 5,
+                order: testimonials.length,
+                isActive: true
+              }
+              setTestimonials([...testimonials, newTestimonial])
+              setEditingId(testimonials.length)
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
+          >
+            <Plus size={18} /> Add Testimonial
+          </button>
+        }
+      />
 
       {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
           {error}
         </div>
       )}
-      {success && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-          {success}
-        </div>
-      )}
-
-      {/* Add New Testimonial Button */}
-      <button
-        onClick={() => {
-          const newTestimonial = {
-            name: '',
-            position: '',
-            message: '',
-            rating: 5,
-            order: testimonials.length,
-            isActive: true
-          }
-          setTestimonials([...testimonials, newTestimonial])
-          setEditingId(testimonials.length)
-        }}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-6"
-      >
-        <Plus size={20} /> Add Testimonial
-      </button>
 
       {/* Testimonials List */}
       <div className="space-y-4">
         {testimonials.map((testimonial, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
+          <div key={index} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             {editingId === index ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -189,7 +199,7 @@ export default function TestimonialContent() {
                         setTestimonials(newTestimonials)
                       }}
                       maxLength={100}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                     />
                   </div>
                   <div>
@@ -203,7 +213,7 @@ export default function TestimonialContent() {
                         setTestimonials(newTestimonials)
                       }}
                       maxLength={150}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                     />
                   </div>
                 </div>
@@ -219,7 +229,7 @@ export default function TestimonialContent() {
                     }}
                     maxLength={500}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                   <p className="text-xs text-gray-500 mt-1">{testimonial.message?.length || 0}/500</p>
                 </div>
@@ -234,7 +244,7 @@ export default function TestimonialContent() {
                         newTestimonials[index].rating = parseInt(e.target.value)
                         setTestimonials(newTestimonials)
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                     >
                       {[5, 4, 3, 2, 1].map(r => (
                         <option key={r} value={r}>{r} Stars</option>
@@ -260,13 +270,13 @@ export default function TestimonialContent() {
                   <button
                     onClick={() => handleSave(testimonial)}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
                   >
-                    <Save size={18} /> Save
+                    <Save size={16} /> Save
                   </button>
                   <button
                     onClick={() => setEditingId(null)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
@@ -279,46 +289,48 @@ export default function TestimonialContent() {
                   <p className="text-sm text-gray-600">{testimonial.position}</p>
                   <p className="text-gray-700 mt-2 italic">"{testimonial.message}"</p>
                   <div className="flex items-center gap-2 mt-3">
-                    <div className="flex gap-1 text-yellow-500">
+                    <div className="flex gap-0.5 text-amber-500">
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <span key={i}>⭐</span>
+                        <Star key={i} size={14} fill="currentColor" strokeWidth={0} />
                       ))}
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded ${testimonial.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${testimonial.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
                       {testimonial.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex gap-1 ml-4">
                   {index > 0 && (
                     <button
                       onClick={() => moveOrder(index, 'up')}
-                      className="p-2 text-gray-600 hover:bg-gray-200 rounded"
+                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                       title="Move up"
                     >
-                      <ArrowUp size={18} />
+                      <ArrowUp size={16} />
                     </button>
                   )}
                   {index < testimonials.length - 1 && (
                     <button
                       onClick={() => moveOrder(index, 'down')}
-                      className="p-2 text-gray-600 hover:bg-gray-200 rounded"
+                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                       title="Move down"
                     >
-                      <ArrowDown size={18} />
+                      <ArrowDown size={16} />
                     </button>
                   )}
                   <button
                     onClick={() => setEditingId(index)}
-                    className="p-2 text-blue-600 hover:bg-blue-100 rounded"
+                    className="p-2 text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Edit"
                   >
-                    <Edit2 size={18} />
+                    <Edit2 size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(testimonial._id)}
-                    className="p-2 text-red-600 hover:bg-red-100 rounded"
+                    onClick={() => handleDeleteClick(testimonial)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -327,28 +339,51 @@ export default function TestimonialContent() {
         ))}
 
         {testimonials.length === 0 && !loading && (
-          <div className="bg-gray-50 rounded-lg p-8 text-center">
-            <p className="text-gray-600 mb-4">No testimonials yet</p>
-            <button
-              onClick={() => {
-                const newTestimonial = {
-                  name: '',
-                  position: '',
-                  message: '',
-                  rating: 5,
-                  order: 0,
-                  isActive: true
-                }
-                setTestimonials([newTestimonial])
-                setEditingId(0)
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus size={20} /> Add First Testimonial
-            </button>
-          </div>
+          <EmptyState
+            icon={MessageSquareQuote}
+            title="No testimonials yet"
+            message="Add your first testimonial to display it on the homepage."
+            action={
+              <button
+                onClick={() => {
+                  const newTestimonial = {
+                    name: '',
+                    position: '',
+                    message: '',
+                    rating: 5,
+                    order: 0,
+                    isActive: true
+                  }
+                  setTestimonials([newTestimonial])
+                  setEditingId(0)
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
+              >
+                <Plus size={18} /> Add First Testimonial
+              </button>
+            }
+          />
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Delete testimonial?"
+        message={`Are you sure you want to delete the testimonial from "${deleteTarget?.name || 'this person'}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        tone="danger"
+        isLoading={deleting}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
+  )
+}
+
+export default function TestimonialContent() {
+  return (
+    <ProtectedRoute allowedRoles={['super admin', 'admin']}>
+      <TestimonialContentInner />
+    </ProtectedRoute>
   )
 }

@@ -1,18 +1,19 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react'
-import { ChevronDown, Building2, Users, Bed, AlertCircle, Loader } from 'lucide-react'
+import { ChevronDown, Building2, Users, Bed, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useCampus } from '@/context/CampusContext'
 import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton'
 
 // Bed Component
 const BedIcon = ({ occupied }) => (
   <div
-    className={`w-10 h-10 rounded flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${
-      occupied
-        ? 'bg-red-500 text-white'
-        : 'bg-green-500 text-white'
+    className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm transition-transform hover:scale-110 ${
+      occupied ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
     }`}
   >
     <Bed size={20} />
@@ -25,23 +26,23 @@ const RoomCard = ({ room, hostelCode, block }) => {
   const vacantBeds = room.capacity - room.occupancy
 
   return (
-    <div className="border border-gray-300 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+    <div className="border border-gray-100 rounded-2xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
         <div className="mb-2 sm:mb-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg font-semibold text-gray-900">Room {room.roomNumber}</span>
-            {block && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Block {block}</span>}
+            {block && <span className="text-xs bg-blue-50 text-blue-900 px-2 py-1 rounded-full">Block {block}</span>}
           </div>
           <p className="text-xs text-gray-500">ID: {hostelCode}</p>
         </div>
         <div className="flex items-center gap-2">
           <span
-            className={`px-3 py-1 rounded-full text-xs font-medium ${
+            className={`px-3 py-1 rounded-full text-xs font-medium border ${
               room.status === 'occupied'
-                ? 'bg-red-100 text-red-700'
+                ? 'bg-red-50 text-red-700 border-red-200'
                 : room.status === 'partly-occupied'
-                ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-green-100 text-green-700'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
             }`}
           >
             {room.status === 'occupied'
@@ -61,14 +62,14 @@ const RoomCard = ({ room, hostelCode, block }) => {
           </span>
           <span className="text-xs font-semibold text-gray-700">{occupancyPercentage}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-gray-100 rounded-full h-2">
           <div
             className={`h-2 rounded-full transition-all ${
               room.status === 'occupied'
                 ? 'bg-red-500'
                 : room.status === 'partly-occupied'
-                ? 'bg-yellow-500'
-                : 'bg-green-500'
+                ? 'bg-amber-500'
+                : 'bg-emerald-500'
             }`}
             style={{ width: `${occupancyPercentage}%` }}
           />
@@ -78,8 +79,8 @@ const RoomCard = ({ room, hostelCode, block }) => {
       {/* Beds Grid */}
       <div className="mb-4">
         <p className="text-xs font-medium text-gray-600 mb-2">
-          Available: <span className="text-green-600 font-semibold">{vacantBeds}</span> | 
-          Occupied: <span className="text-red-600 font-semibold">{room.occupancy}</span>
+          Available: <span className="text-emerald-600 font-semibold">{vacantBeds}</span> | Occupied:{' '}
+          <span className="text-red-600 font-semibold">{room.occupancy}</span>
         </p>
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: room.capacity }).map((_, index) => (
@@ -90,14 +91,11 @@ const RoomCard = ({ room, hostelCode, block }) => {
 
       {/* Assigned Students */}
       {room.assignedStudents.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-xs font-medium text-gray-600 mb-2">Assigned Students:</p>
           <div className="flex flex-wrap gap-2">
             {room.assignedStudents.map((student, idx) => (
-              <span
-                key={idx}
-                className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
-              >
+              <span key={idx} className="inline-block bg-blue-50 text-blue-900 text-xs px-2 py-1 rounded">
                 {student}
               </span>
             ))}
@@ -119,20 +117,26 @@ const FloorSection = ({ hostel, rooms }) => {
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
           <div>
-            <h3 className="text-lg font-semibold text-blue-600 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-blue-900 flex items-center gap-2">
               <Building2 size={20} />
               {hostel.hostelName}
             </h3>
             <div className="flex items-center gap-4 ml-7 text-sm text-gray-600 flex-wrap">
-              <p><span className="font-semibold">Block:</span> {hostel.block}</p>
-              <p><span className="font-semibold">Floor:</span> {hostel.floor}</p>
-              <p><span className="font-semibold">Rooms:</span> {rooms.length}</p>
+              <p>
+                <span className="font-semibold">Block:</span> {hostel.block}
+              </p>
+              <p>
+                <span className="font-semibold">Floor:</span> {hostel.floor}
+              </p>
+              <p>
+                <span className="font-semibold">Rooms:</span> {rooms.length}
+              </p>
             </div>
           </div>
           <div className="flex gap-3 flex-wrap sm:flex-nowrap">
-            <div className="bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+            <div className="bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
               <p className="text-xs text-gray-600">Available</p>
-              <p className="text-lg font-bold text-green-600">{availableBeds}</p>
+              <p className="text-lg font-bold text-emerald-600">{availableBeds}</p>
             </div>
             <div className="bg-red-50 px-3 py-2 rounded-lg border border-red-200">
               <p className="text-xs text-gray-600">Occupied</p>
@@ -154,7 +158,7 @@ const FloorSection = ({ hostel, rooms }) => {
 
 // Main Component
 export default function RoomAllocationsPage() {
-  const { isAuthenticated, loading: authLoading, token } = useAuth()
+  const { isAuthenticated, loading: authLoading, token, isAdmin, isStaff } = useAuth()
   const { hostels } = useCampus()
   const router = useRouter()
   const [roomData, setRoomData] = useState([])
@@ -164,17 +168,17 @@ export default function RoomAllocationsPage() {
   const [selectedBlock, setSelectedBlock] = useState('all')
   const [selectedFloor, setSelectedFloor] = useState('all')
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or not admin/staff
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (!authLoading && (!isAuthenticated || !(isAdmin || isStaff))) {
       router.push('/login')
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, isAdmin, isStaff, router])
 
   // Fetch rooms data only
   useEffect(() => {
     const fetchRooms = async () => {
-      if (!isAuthenticated || !token) return
+      if (!isAuthenticated || !token || !(isAdmin || isStaff)) return
 
       try {
         setLoading(true)
@@ -208,10 +212,10 @@ export default function RoomAllocationsPage() {
       }
     }
 
-    if (isAuthenticated && token && hostels.length > 0) {
+    if (isAuthenticated && token && hostels.length > 0 && (isAdmin || isStaff)) {
       fetchRooms()
     }
-  }, [isAuthenticated, token, hostels])
+  }, [isAuthenticated, token, hostels, isAdmin, isStaff])
 
   // Transform backend data to our format
   const transformRoomData = (rooms, hostelsList) => {
@@ -254,8 +258,8 @@ export default function RoomAllocationsPage() {
       }
 
       // Extract student names from assigned students
-      const studentNames = (room.assignedStudents || []).map(
-        (student) => `${student.firstName || ''} ${student.lastName || ''}`.trim()
+      const studentNames = (room.assignedStudents || []).map((student) =>
+        `${student.firstName || ''} ${student.lastName || ''}`.trim()
       )
 
       grouped[key].rooms.push({
@@ -278,9 +282,7 @@ export default function RoomAllocationsPage() {
   }, [roomData])
 
   const blocks = useMemo(() => {
-    const filtered = roomData.filter(
-      (item) => selectedHostel === 'all' || item.hostelName === selectedHostel
-    )
+    const filtered = roomData.filter((item) => selectedHostel === 'all' || item.hostelName === selectedHostel)
     const unique = [...new Set(filtered.map((item) => item.block))]
     return unique
   }, [selectedHostel, roomData])
@@ -316,181 +318,161 @@ export default function RoomAllocationsPage() {
   }, [filteredData])
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <PageSpinner label="Loading..." />
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !(isAdmin || isStaff)) {
     return null
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Room Allocation Overview</h1>
-          <p className="text-gray-600">Manage and monitor room occupancy across all hostels</p>
+    <div className="space-y-6 mt-4 md:mt-8">
+      <PageHeader
+        icon={Building2}
+        title="Room Allocation Overview"
+        subtitle="Manage and monitor room occupancy across all hostels"
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-4">
+          <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+          <div>
+            <h3 className="text-sm font-semibold text-red-900 mb-1">Error Loading Data</h3>
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 flex items-start gap-4">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-            <div>
-              <h3 className="text-sm font-semibold text-red-900 mb-1">Error Loading Data</h3>
-              <p className="text-sm text-red-700">{error}</p>
+      {/* Loading State */}
+      {loading ? (
+        <PageSpinner label="Loading room allocations..." />
+      ) : (
+        <>
+          {/* Filters */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <ChevronDown size={18} className="text-blue-900" />
+              Filters
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Hostel Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Hostel</label>
+                <select
+                  value={selectedHostel}
+                  onChange={(e) => {
+                    setSelectedHostel(e.target.value)
+                    setSelectedBlock('all')
+                    setSelectedFloor('all')
+                  }}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white"
+                >
+                  <option value="all">All Hostels</option>
+                  {hostelsList.map((hostel) => (
+                    <option key={hostel} value={hostel}>
+                      {hostel}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Block Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Block</label>
+                <select
+                  value={selectedBlock}
+                  onChange={(e) => {
+                    setSelectedBlock(e.target.value)
+                    setSelectedFloor('all')
+                  }}
+                  disabled={blocks.length === 0}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white disabled:opacity-50"
+                >
+                  <option value="all">All Blocks</option>
+                  {blocks.map((block) => (
+                    <option key={block} value={block}>
+                      {block}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Floor Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Floor</label>
+                <select
+                  value={selectedFloor}
+                  onChange={(e) => setSelectedFloor(e.target.value)}
+                  disabled={floors.length === 0}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white disabled:opacity-50"
+                >
+                  <option value="all">All Floors</option>
+                  {floors.map((floor) => (
+                    <option key={floor} value={floor}>
+                      {floor}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Loading State */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm p-6 h-32"></div>
-            ))}
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 border-l-4 border-l-emerald-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm font-medium">Available Beds</p>
+                  <p className="text-3xl font-bold text-emerald-600 mt-1">{stats.vacant}</p>
+                </div>
+                <div className="bg-emerald-50 p-3 rounded-lg">
+                  <Bed className="text-emerald-600" size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 border-l-4 border-l-red-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm font-medium">Occupied Beds</p>
+                  <p className="text-3xl font-bold text-red-600 mt-1">{stats.totalOccupancy}</p>
+                </div>
+                <div className="bg-red-50 p-3 rounded-lg">
+                  <Users className="text-red-600" size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 border-l-4 border-l-blue-900">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm font-medium">Total Capacity</p>
+                  <p className="text-3xl font-bold text-blue-900 mt-1">{stats.totalCapacity}</p>
+                </div>
+                <div className="bg-blue-900/5 p-3 rounded-lg">
+                  <Building2 className="text-blue-900" size={24} />
+                </div>
+              </div>
+            </div>
           </div>
-        ) : (
-          <>
-            {/* Filters */}
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <ChevronDown size={20} />
-                Filters
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Hostel Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Hostel</label>
-                  <select
-                    value={selectedHostel}
-                    onChange={(e) => {
-                      setSelectedHostel(e.target.value)
-                      setSelectedBlock('all')
-                      setSelectedFloor('all')
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  >
-                    <option value="all">All Hostels</option>
-                    {hostelsList.map((hostel) => (
-                      <option key={hostel} value={hostel}>
-                        {hostel}
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
-                {/* Block Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Block</label>
-                  <select
-                    value={selectedBlock}
-                    onChange={(e) => {
-                      setSelectedBlock(e.target.value)
-                      setSelectedFloor('all')
-                    }}
-                    disabled={blocks.length === 0}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:opacity-50"
-                  >
-                    <option value="all">All Blocks</option>
-                    {blocks.map((block) => (
-                      <option key={block} value={block}>
-                        {block}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Floor Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Floor</label>
-                  <select
-                    value={selectedFloor}
-                    onChange={(e) => setSelectedFloor(e.target.value)}
-                    disabled={floors.length === 0}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:opacity-50"
-                  >
-                    <option value="all">All Floors</option>
-                    {floors.map((floor) => (
-                      <option key={floor} value={floor}>
-                        {floor}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          {/* Rooms Display */}
+          {filteredData.length > 0 ? (
+            <div className="space-y-8">
+              {filteredData.map((hostel) => (
+                <FloorSection key={`${hostel.id}-${hostel.floor}`} hostel={hostel} rooms={hostel.rooms} />
+              ))}
             </div>
-
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Available Beds</p>
-                    <p className="text-3xl font-bold text-green-600 mt-1">{stats.vacant}</p>
-                  </div>
-                  <div className="bg-green-100 p-3 rounded-lg">
-                    <Bed className="text-green-600" size={24} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Occupied Beds</p>
-                    <p className="text-3xl font-bold text-red-600 mt-1">{stats.totalOccupancy}</p>
-                  </div>
-                  <div className="bg-red-100 p-3 rounded-lg">
-                    <Users className="text-red-600" size={24} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Total Capacity</p>
-                    <p className="text-3xl font-bold text-blue-600 mt-1">{stats.totalCapacity}</p>
-                  </div>
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <Building2 className="text-blue-600" size={24} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Rooms Display */}
-            {filteredData.length > 0 ? (
-              <div className="space-y-8">
-                {filteredData.map((hostel) => (
-                  <FloorSection
-                    key={`${hostel.id}-${hostel.floor}`}
-                    hostel={hostel}
-                    rooms={hostel.rooms}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-                <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-600 text-lg">No rooms found with the selected filters.</p>
-                <p className="text-gray-500 text-sm mt-2">Try adjusting your filter selections.</p>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          ) : (
+            <EmptyState
+              icon={Building2}
+              title="No rooms found"
+              message="Try adjusting your filter selections."
+            />
+          )}
+        </>
+      )}
     </div>
   )
 }

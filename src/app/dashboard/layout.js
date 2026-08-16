@@ -5,6 +5,7 @@ import DashboardMenu from "@/components/dashboard-component/DashboardMenu";
 import { ProtectedRoute } from "../../components/ProtectedRoute"
 import DashboardBottomNav from '@/components/dashboard-component/DasboardBottomNav'
 import { CampusProvider } from "@/context/CampusContext"
+import { DashboardToaster } from "@/components/dashboard-component/ui/toast"
 
 // This is a client layout so we can manage sidebar collapse state.
 export default function DashboardLayout({ children }) {
@@ -29,6 +30,7 @@ export default function DashboardLayout({ children }) {
     <ProtectedRoute allowedRoles={['super admin', 'admin', 'student', 'staff']}>
       <CampusProvider>
         <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+          <DashboardToaster />
           <DashboardHeader onToggleSidebar={toggleSidebar} onToggleMobileMenu={toggleMobileMenu} />
 
           <div className="flex pt-16">

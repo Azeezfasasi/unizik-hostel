@@ -1,19 +1,24 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Loader, AlertCircle, CheckCircle, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Tags } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import { PageSpinner, TableSkeleton } from '@/components/dashboard-component/ui/Skeleton'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal'
+import { notify } from '@/components/dashboard-component/ui/toast'
 
 export default function AddFacilityCategoryPage() {
   const { isAuthenticated, loading: authLoading, token, user } = useAuth()
   const router = useRouter()
   const [categoryName, setCategoryName] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
   const [categories, setCategories] = useState([])
   const [fetchLoading, setFetchLoading] = useState(true)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -50,14 +55,12 @@ export default function AddFacilityCategoryPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!categoryName.trim()) {
-      setError('Category name is required')
+      notify.error('Category name is required')
       return
     }
 
     try {
       setLoading(true)
-      setError(null)
-      setSuccess(false)
 
       const res = await fetch('/api/facility-category', {
         method: 'POST',
@@ -72,48 +75,39 @@ export default function AddFacilityCategoryPage() {
 
       if (!res.ok) throw new Error(data.message || 'Failed to create category')
 
-      setSuccess(true)
       setCategoryName('')
       setCategories([...categories, data.data])
-      setTimeout(() => setSuccess(false), 3000)
+      notify.success('Category created successfully')
     } catch (err) {
-      setError(err.message || 'Failed to create category')
+      notify.error(err.message || 'Failed to create category')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDelete = async (categoryId) => {
-    if (!confirm('Are you sure you want to delete this category?')) return
-
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
     try {
-      setLoading(true)
-      const res = await fetch(`/api/facility-category/${categoryId}`, {
+      setDeleteLoading(true)
+      const res = await fetch(`/api/facility-category/${deleteTarget._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (!res.ok) throw new Error('Failed to delete category')
 
-      setCategories(categories.filter(c => c._id !== categoryId))
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
+      setCategories(categories.filter(c => c._id !== deleteTarget._id))
+      notify.success('Category deleted successfully')
+      setDeleteTarget(null)
     } catch (err) {
-      setError(err.message || 'Failed to delete category')
+      notify.error(err.message || 'Failed to delete category')
     } finally {
-      setLoading(false)
+      setDeleteLoading(false)
     }
   }
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <PageSpinner label="Loading..." />
   }
 
   if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'super admin')) {
@@ -121,105 +115,96 @@ export default function AddFacilityCategoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Facility Categories</h1>
-          <p className="text-gray-600 mt-1">Create and manage facility categories</p>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6 mt-4 md:mt-8">
+      <PageHeader
+        icon={Tags}
+        title="Facility Categories"
+        subtitle="Create and manage facility categories"
+      />
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category Name</label>
-              <input
-                type="text"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                placeholder="e.g., Air Conditioning, Water System, Electrical"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-                <p className="text-red-700">{error}</p>
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-                <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
-                <p className="text-green-700">Category created successfully!</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader size={18} className="animate-spin" /> : <Plus size={18} />}
-              {loading ? 'Creating...' : 'Create Category'}
-            </button>
-          </form>
-        </div>
-
-        {/* Categories List */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Categories ({categories.length})</h2>
+      {/* Form */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category Name</label>
+            <input
+              type="text"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              placeholder="e.g., Air Conditioning, Water System, Electrical"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
+            />
           </div>
 
-          {fetchLoading ? (
-            <div className="p-8 text-center">
-              <Loader className="text-blue-600 animate-spin mx-auto mb-4" size={32} />
-              <p className="text-gray-600">Loading categories...</p>
-            </div>
-          ) : categories.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Category Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
-                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {categories.map((category) => (
-                    <tr key={category._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{category.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {new Date(category.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleDelete(category._id)}
-                          disabled={loading}
-                          className="text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center gap-2"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-gray-500">
-              <p>No categories found. Create one to get started!</p>
-            </div>
-          )}
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
+          >
+            <Plus size={18} />
+            {loading ? 'Creating...' : 'Create Category'}
+          </button>
+        </form>
       </div>
+
+      {/* Categories List */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-900">Categories ({categories.length})</h2>
+        </div>
+
+        {fetchLoading ? (
+          <div className="p-6">
+            <TableSkeleton rows={4} cols={3} />
+          </div>
+        ) : categories.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <tr>
+                  <th className="px-6 py-3 text-left">Category Name</th>
+                  <th className="px-6 py-3 text-left">Created</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {categories.map((category) => (
+                  <tr key={category._id} className="hover:bg-gray-50/60">
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{category.name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {new Date(category.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => setDeleteTarget(category)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-6">
+            <EmptyState title="No categories found" message="Create one to get started!" />
+          </div>
+        )}
+      </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Delete Category"
+        message={deleteTarget ? `Are you sure you want to delete "${deleteTarget.name}"? This action cannot be undone.` : ''}
+        confirmLabel="Delete"
+        tone="danger"
+        isLoading={deleteLoading}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

@@ -1,9 +1,28 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { useAuth } from "@/context/AuthContext";
-import { Briefcase, NotepadText } from 'lucide-react';
+import { ClipboardList, MessageSquareWarning, DoorOpen, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { Commet } from "react-loading-indicators";
+
+const ROLE_ACTIONS = {
+  'super admin': [
+    { href: '/dashboard/all-room-requests', label: 'Review Room Requests', icon: ClipboardList, primary: true },
+    { href: '/dashboard/manage-complaints', label: 'Manage Complaints', icon: MessageSquareWarning },
+  ],
+  admin: [
+    { href: '/dashboard/all-room-requests', label: 'Review Room Requests', icon: ClipboardList, primary: true },
+    { href: '/dashboard/manage-complaints', label: 'Manage Complaints', icon: MessageSquareWarning },
+  ],
+  staff: [
+    { href: '/dashboard/all-damage-reports', label: 'Damage Reports', icon: FileText, primary: true },
+    { href: '/dashboard/manage-complaints', label: 'Manage Complaints', icon: MessageSquareWarning },
+  ],
+  student: [
+    { href: '/dashboard/my-room-details', label: 'My Room Details', icon: DoorOpen, primary: true },
+    { href: '/dashboard/send-complaint', label: 'Report an Issue', icon: MessageSquareWarning },
+  ],
+};
 
 function getGreeting(date) {
   const hour = date.getHours();
@@ -56,35 +75,43 @@ export default function DashboardWelcome() {
   const firstName = user?.firstName || (user?.name ? user.name.split(" ")[0] : "Admin");
   const role = user?.role || "";
 
+  const actions = ROLE_ACTIONS[role] || [];
+
   return (
-    <section className="bg-white rounded-lg shadow-sm p-5 md:p-6 lg:p-8">
-      <div className="flex flex-col lg:flex-row md:items-center md:justify-between gap-4">
+    <section className="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 lg:p-8">
+      <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-blue-900/5" aria-hidden="true" />
+      <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-br from-blue-800 to-blue-900 text-white text-xl font-bold">
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-800 to-blue-900 text-white text-xl font-bold shadow-sm">
             {firstName.charAt(0).toUpperCase()}
           </div>
 
           <div>
-            <h1 className="text-lg md:text-2xl font-semibold text-gray-900">
+            <h1 className="text-lg md:text-2xl font-semibold text-gray-900 tracking-tight">
               {greeting}, <span className="text-blue-900">{firstName}</span>
             </h1>
             <p className="mt-1 text-sm text-gray-500">{dateStr} • {timeStr}</p>
           </div>
         </div>
 
-        {user?.role === 'admin' || user?.role === 'committee' || user?.role === 'it-support' ? (
-        <div className="flex flex-col lg:flex-row md:items-center gap-3">
-          <Link href="/dashboard/member-registration-request" className="inline-flex justify-center items-center gap-2 px-3 py-1 md:py-2 bg-blue-900 text-white rounded-md text-sm hover:bg-blue-800 cursor-pointer">
-            <Briefcase />
-            Manage Registration Requests
-          </Link>
-
-          <Link href="/dashboard/add-blog" className="inline-flex justify-center items-center gap-2 px-3 py-1 md:py-2 border bg-gray-100 border-gray-200 rounded-md text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
-            <NotepadText />
-            Publish Blog Posts
-          </Link>
-        </div>
-        ) : null}
+        {actions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2.5">
+            {actions.map(({ href, label, icon: Icon, primary }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`inline-flex justify-center items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  primary
+                    ? 'bg-blue-900 text-white hover:bg-blue-800 shadow-sm'
+                    : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -2,22 +2,29 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { Building2, Eye, Edit2, Trash2, X, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { notify } from '@/components/dashboard-component/ui/toast';
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal';
+import Pagination from '@/components/dashboard-component/ui/Pagination';
+import PageHeader from '@/components/dashboard-component/ui/PageHeader';
+import EmptyState from '@/components/dashboard-component/ui/EmptyState';
+import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton';
 
 // Modal Components
 function ViewModal({ hostel, isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="bg-blue-600 text-white p-4 sm:p-6 sticky top-0">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="bg-blue-900 text-white p-4 sm:p-6 sticky top-0">
           <h2 className="text-xl sm:text-2xl font-bold pr-8 break-words">{hostel?.name}</h2>
           <button
             onClick={onClose}
-            className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-blue-700 p-2 rounded"
+            className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-white/10 p-2 rounded-full transition"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
         
@@ -71,7 +78,7 @@ function ViewModal({ hostel, isOpen, onClose }) {
 
           <button
             onClick={onClose}
-            className="w-full mt-4 sm:mt-6 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm sm:text-base"
+            className="w-full mt-4 sm:mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
           >
             Close
           </button>
@@ -101,15 +108,15 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="bg-yellow-500 text-white p-4 sm:p-6 sticky top-0">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="bg-blue-900 text-white p-4 sm:p-6 sticky top-0">
           <h2 className="text-xl sm:text-2xl font-bold pr-8">Edit Hostel</h2>
           <button
             onClick={onClose}
-            className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-yellow-600 p-2 rounded"
+            className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-white/10 p-2 rounded-full transition"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
 
@@ -122,7 +129,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
                 name="name"
                 value={formData.name || ''}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 required
               />
             </div>
@@ -133,7 +140,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
                 name="hostelCampus"
                 value={formData.hostelCampus || ''}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 required
               />
             </div>
@@ -144,7 +151,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
                 name="block"
                 value={formData.block || ''}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 required
               />
             </div>
@@ -155,7 +162,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
                 name="floor"
                 value={formData.floor || ''}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 required
               />
             </div>
@@ -166,7 +173,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
                 name="location"
                 value={formData.location || ''}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 required
               />
             </div>
@@ -176,7 +183,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
                 name="genderRestriction"
                 value={formData.genderRestriction || 'mixed'}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -192,7 +199,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
               value={formData.description || ''}
               onChange={handleChange}
               rows="2"
-              className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
               required
             />
           </div>
@@ -204,7 +211,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
               value={formData.rulesAndPolicies || ''}
               onChange={handleChange}
               rows="2"
-              className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
             />
           </div>
 
@@ -212,61 +219,19 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition disabled:opacity-50 font-medium text-sm sm:text-base"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition font-medium text-sm sm:text-base"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  );
-}
-
-function DeleteModal({ hostel, isOpen, onClose, onConfirm, isDeleting }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="bg-red-600 text-white p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold pr-8">Delete Hostel</h2>
-          <button
-            onClick={onClose}
-            className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-red-700 p-2 rounded"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="p-4 sm:p-6">
-          <p className="text-gray-700 mb-4 text-sm sm:text-base">
-            Are you sure you want to delete <strong>{hostel?.name}</strong>? This action cannot be undone.
-          </p>
-
-          <div className="flex gap-2 sm:gap-3">
-            <button
-              onClick={onConfirm}
-              disabled={isDeleting}
-              className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium text-sm sm:text-base"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition font-medium text-sm sm:text-base"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -352,9 +317,13 @@ export default function HostelListPage() {
       if (data.success) {
         setHostels(hostels.map(h => h._id === updatedHostel._id ? data.data : h));
         setEditModal({ isOpen: false, hostel: null });
+        notify.success('Hostel updated successfully');
+      } else {
+        notify.error(data.message || 'Failed to update hostel');
       }
     } catch (error) {
       console.error('Failed to update hostel:', error);
+      notify.error('Failed to update hostel');
     } finally {
       setIsSaving(false);
     }
@@ -370,48 +339,46 @@ export default function HostelListPage() {
       if (data.success) {
         setHostels(hostels.filter(h => h._id !== deleteModal.hostel._id));
         setDeleteModal({ isOpen: false, hostel: null });
+        notify.success('Hostel deleted successfully');
+      } else {
+        notify.error(data.message || 'Failed to delete hostel');
       }
     } catch (error) {
       console.error('Failed to delete hostel:', error);
+      notify.error('Failed to delete hostel');
     } finally {
       setIsDeleting(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading hostels...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading hostels..." />;
   }
 
   return (
     <div className="space-y-6 mt-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="text-2xl sm:text-3xl">🏢</div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Hostel Management</h1>
-        </div>
-        {isAdmin && (
-          <Link href="/dashboard/add-hostel">
-            <button className="w-full sm:w-auto bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 transition font-semibold text-sm sm:text-base">
-              + Add Hostel
-            </button>
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        icon={Building2}
+        title="Hostel Management"
+        subtitle="Manage hostels across all campuses"
+        actions={
+          isAdmin && (
+            <Link href="/dashboard/add-hostel">
+              <button className="w-full sm:w-auto inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm">
+                <Plus size={16} />
+                Add Hostel
+              </button>
+            </Link>
+          )
+        }
+      />
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         <select
           value={selectedCampus}
           onChange={(e) => setSelectedCampus(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm md:text-base"
+          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white"
         >
           <option value="">All Campuses</option>
           {campuses.map((campus, idx) => (
@@ -424,13 +391,13 @@ export default function HostelListPage() {
           placeholder="Search by name or location..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
         />
 
         <select
           value={itemsPerPage}
           onChange={(e) => setItemsPerPage(Number(e.target.value))}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm md:text-base"
+          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition bg-white"
         >
           <option value="5">5 per page</option>
           <option value="10">10 per page</option>
@@ -440,24 +407,24 @@ export default function HostelListPage() {
       </div>
 
       {/* Table - Hidden on mobile, shown on md and above */}
-      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-100 border-b border-gray-200">
+            <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Campus Name</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Hostel Name</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Block</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Floor</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Gender</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Location</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
+                <th className="px-4 py-3 text-left">Campus Name</th>
+                <th className="px-4 py-3 text-left">Hostel Name</th>
+                <th className="px-4 py-3 text-left">Block</th>
+                <th className="px-4 py-3 text-left">Floor</th>
+                <th className="px-4 py-3 text-left">Gender</th>
+                <th className="px-4 py-3 text-left">Location</th>
+                <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {paginatedHostels.length > 0 ? (
                 paginatedHostels.map((hostel, idx) => (
-                  <tr key={hostel._id || idx} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                  <tr key={hostel._id || idx} className="hover:bg-gray-50/60 transition">
                     <td className="px-4 py-3 text-sm text-gray-900 font-medium">{hostel.hostelCampus}</td>
                     <td className="px-4 py-3 text-sm text-gray-900 font-medium">{hostel.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{hostel.block}</td>
@@ -468,26 +435,26 @@ export default function HostelListPage() {
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => setViewModal({ isOpen: true, hostel })}
-                          className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition"
+                          className="inline-flex items-center justify-center p-2 rounded-lg text-blue-900 bg-blue-900/5 hover:bg-blue-900/10 transition"
                           title="View"
                         >
-                          👁️
+                          <Eye size={16} />
                         </button>
                         {isAdmin && (
                           <>
                             <button
                               onClick={() => setEditModal({ isOpen: true, hostel })}
-                              className="bg-yellow-500 text-white p-2 rounded-lg hover:bg-yellow-600 transition"
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 bg-gray-50 hover:bg-gray-100 transition"
                               title="Edit"
                             >
-                              ✏️
+                              <Edit2 size={16} />
                             </button>
                             <button
                               onClick={() => setDeleteModal({ isOpen: true, hostel })}
-                              className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition"
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition"
                               title="Delete"
                             >
-                              🗑️
+                              <Trash2 size={16} />
                             </button>
                           </>
                         )}
@@ -511,12 +478,12 @@ export default function HostelListPage() {
       <div className="md:hidden space-y-4">
         {paginatedHostels.length > 0 ? (
           paginatedHostels.map((hostel, idx) => (
-            <div key={hostel._id || idx} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
+            <div key={hostel._id || idx} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-blue-900 text-white p-4">
                 <h3 className="font-bold text-lg truncate">{hostel.name}</h3>
                 <p className="text-blue-100 text-sm">{hostel.hostelCampus}</p>
               </div>
-              
+
               <div className="p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -537,10 +504,10 @@ export default function HostelListPage() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-gray-200 flex gap-2 justify-center">
+                <div className="pt-3 border-t border-gray-100 flex gap-2 justify-center">
                   <button
                     onClick={() => setViewModal({ isOpen: true, hostel })}
-                    className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition text-sm font-medium"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
                   >
                     View
                   </button>
@@ -548,13 +515,13 @@ export default function HostelListPage() {
                     <>
                       <button
                         onClick={() => setEditModal({ isOpen: true, hostel })}
-                        className="flex-1 bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition text-sm font-medium"
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setDeleteModal({ isOpen: true, hostel })}
-                        className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition text-sm font-medium"
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors"
                       >
                         Delete
                       </button>
@@ -565,36 +532,18 @@ export default function HostelListPage() {
             </div>
           ))
         ) : (
-          <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
-            <p className="text-gray-500">No hostels found</p>
-          </div>
+          <EmptyState icon={Building2} title="No hostels found" message="Try adjusting your filters or search." />
         )}
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex gap-2 justify-center sm:justify-start">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm sm:text-base"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm sm:text-base"
-            >
-              Next
-            </button>
-          </div>
-          <span className="text-gray-600 text-center sm:text-left text-sm sm:text-base">
-            Page {currentPage} of {totalPages}
-          </span>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalItems={filteredHostels.length}
+        pageSize={itemsPerPage}
+      />
 
       {/* Modals */}
       <ViewModal
@@ -611,12 +560,15 @@ export default function HostelListPage() {
         isSaving={isSaving}
       />
 
-      <DeleteModal
-        hostel={deleteModal.hostel}
+      <ConfirmModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, hostel: null })}
+        title="Delete Hostel"
+        message={deleteModal.hostel ? `Are you sure you want to delete "${deleteModal.hostel.name}"? This action cannot be undone.` : ''}
+        confirmLabel="Delete"
+        tone="danger"
+        isLoading={isDeleting}
         onConfirm={handleDelete}
-        isDeleting={isDeleting}
+        onClose={() => setDeleteModal({ isOpen: false, hostel: null })}
       />
     </div>
   );

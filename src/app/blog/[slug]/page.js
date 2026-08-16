@@ -6,6 +6,7 @@ import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 
 const PDFViewer = dynamic(() => import('@/components/PDFViewer'), { ssr: false });
 
@@ -191,7 +192,7 @@ export default function BlogDetailPage() {
         {/* Featured Image */}
         {blog.featuredImage && (
           <div className="mb-8 rounded-lg overflow-hidden max-h-110">
-            <img src={blog.featuredImage} alt={blog.postTitle} className="w-full h-full object-cover" />
+            <Image src={blog.featuredImage} alt={blog.postTitle} className="w-full h-full object-cover" />
           </div>
         )}
 
@@ -243,7 +244,7 @@ export default function BlogDetailPage() {
               <div className="flex gap-4 mb-4">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
                   {user.avatar ? (
-                    <img src={user.avatar} alt={user.firstName} className="w-full h-full object-cover" />
+                    <Image width={40} height={40} src={user.avatar} alt={user.firstName} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-blue-900 text-white font-bold">
                       {user.firstName?.charAt(0)}
@@ -288,7 +289,7 @@ export default function BlogDetailPage() {
                 <div key={comment._id} className="flex gap-4">
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
                     {comment.userAvatar ? (
-                      <img src={comment.userAvatar} alt={comment.userName} className="w-full h-full object-cover" />
+                      <Image width={40} height={40} src={comment.userAvatar} alt={comment.userName} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-blue-900 text-white font-bold text-sm">
                         {comment.userName?.charAt(0)}

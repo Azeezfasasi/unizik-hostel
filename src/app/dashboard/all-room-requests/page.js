@@ -1,6 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { notify } from '@/components/dashboard-component/ui/toast';
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal';
+import Pagination from '@/components/dashboard-component/ui/Pagination';
+import PageHeader from '@/components/dashboard-component/ui/PageHeader';
+import StatusBadge from '@/components/dashboard-component/ui/StatusBadge';
+import EmptyState from '@/components/dashboard-component/ui/EmptyState';
+import { PageSpinner, TableSkeleton } from '@/components/dashboard-component/ui/Skeleton';
 import {
   Building2,
   Users,
@@ -9,152 +18,168 @@ import {
   XCircle,
   Loader,
   Search,
-  Filter,
   Eye,
   Check,
   X,
   MapPin,
-  User,
   Mail,
-  Hash,
+  BedDouble,
 } from 'lucide-react';
 
+const PAGE_SIZE = 10;
+
 export default function AllRoomRequestsPage() {
+  const { isAuthenticated, loading: authLoading, token, isAdmin, isStaff } = useAuth();
+  const router = useRouter();
+
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, type: null, request: null });
+
+  // Redirect if not authenticated or not admin/staff
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !(isAdmin || isStaff))) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, authLoading, isAdmin, isStaff, router]);
 
   // Fetch all room requests
   useEffect(() => {
     const fetchRequests = async () => {
+      if (!isAuthenticated || !(isAdmin || isStaff)) return;
       try {
         setLoading(true);
-        const response = await fetch('/api/room/requests');
+        const response = await fetch('/api/room/requests', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         const data = await response.json();
 
         if (data.success) {
           setRequests(data.data || []);
         } else {
-          setError('Failed to load room requests');
+          notify.error(data.message || 'Failed to load room requests');
         }
       } catch (err) {
-        setError('Error loading requests: ' + err.message);
+        notify.error('Error loading requests: ' + err.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRequests();
-  }, []);
+  }, [isAuthenticated, isAdmin, isStaff, token]);
 
   // Filter requests
-  const filteredRequests = requests.filter((request) => {
-    const matchesSearch =
-      request.student?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.student?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.student?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.student?.matricNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.room?.roomNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      const matchesSearch =
+        request.student?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.student?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.student?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.student?.matricNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.room?.roomNumber?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    });
+  }, [requests, searchTerm, statusFilter]);
 
-  // Get status badge color
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-900 text-yellow-100 border-yellow-500';
-      case 'approved':
-        return 'bg-green-900 text-green-100 border-green-500';
-      case 'declined':
-        return 'bg-red-900 text-red-100 border-red-500';
-      default:
-        return 'bg-gray-700 text-gray-100 border-gray-600';
-    }
-  };
+  // Reset to page 1 whenever the filtered set changes shape
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      case 'approved':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'declined':
-        return <XCircle className="w-4 h-4" />;
-      default:
-        return null;
-    }
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / PAGE_SIZE));
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  // Room capacity/occupancy is already populated on request.room by GET /api/room/requests
+  // (the controller does a full, unfiltered `.populate('room', ...)`, so capacity and
+  // currentOccupancy come along for free — no extra /api/room fetch is needed here).
+  const getRoomOccupancy = (room) => {
+    if (!room) return null;
+    const capacity = typeof room.capacity === 'number' ? room.capacity : null;
+    const occupancy =
+      typeof room.currentOccupancy === 'number'
+        ? room.currentOccupancy
+        : room.assignedStudents?.filter(Boolean).length ?? null;
+    if (capacity === null || occupancy === null) return null;
+    return { capacity, occupancy, isFull: occupancy >= capacity };
   };
 
   // Handle approve
-  const handleApprove = async (requestId) => {
+  const doApprove = async (requestId) => {
     try {
       setActionLoading(requestId);
-      setError('');
 
       const response = await fetch(`/api/room/requests/${requestId}?action=approve`, {
         method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Room request approved successfully!');
-        // Update the request in state
-        setRequests(
-          requests.map((r) =>
-            r._id === requestId ? { ...r, status: 'approved' } : r
-          )
+        notify.success('Room request approved successfully!');
+        setRequests((prev) =>
+          prev.map((r) => (r._id === requestId ? { ...r, status: 'approved' } : r))
         );
         setSelectedRequest(null);
-        setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(data.message || 'Failed to approve request');
+        notify.error(data.message || 'Failed to approve request');
       }
     } catch (err) {
-      setError('Error approving request: ' + err.message);
+      notify.error('Error approving request: ' + err.message);
     } finally {
       setActionLoading(null);
+      setConfirmState({ isOpen: false, type: null, request: null });
     }
   };
 
   // Handle decline
-  const handleDecline = async (requestId) => {
+  const doDecline = async (requestId) => {
     try {
       setActionLoading(requestId);
-      setError('');
 
       const response = await fetch(`/api/room/requests/${requestId}?action=decline`, {
         method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Room request declined successfully!');
-        // Update the request in state
-        setRequests(
-          requests.map((r) =>
-            r._id === requestId ? { ...r, status: 'declined' } : r
-          )
+        notify.success('Room request declined.');
+        setRequests((prev) =>
+          prev.map((r) => (r._id === requestId ? { ...r, status: 'declined' } : r))
         );
         setSelectedRequest(null);
-        setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(data.message || 'Failed to decline request');
+        notify.error(data.message || 'Failed to decline request');
       }
     } catch (err) {
-      setError('Error declining request: ' + err.message);
+      notify.error('Error declining request: ' + err.message);
     } finally {
       setActionLoading(null);
+      setConfirmState({ isOpen: false, type: null, request: null });
     }
+  };
+
+  const openApproveConfirm = (request) =>
+    setConfirmState({ isOpen: true, type: 'approve', request });
+  const openDeclineConfirm = (request) =>
+    setConfirmState({ isOpen: true, type: 'decline', request });
+  const closeConfirm = () => {
+    if (actionLoading) return;
+    setConfirmState({ isOpen: false, type: null, request: null });
   };
 
   // Count by status
@@ -165,156 +190,150 @@ export default function AllRoomRequestsPage() {
     declined: requests.filter((r) => r.status === 'declined').length,
   };
 
+  if (authLoading) {
+    return <PageSpinner label="Loading..." />;
+  }
+
+  if (!isAuthenticated || !(isAdmin || isStaff)) {
+    return null;
+  }
+
+  const confirmRequest = confirmState.request;
+  const confirmRoomInfo = confirmRequest ? getRoomOccupancy(confirmRequest.room) : null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-purple-400" />
-            Room Requests Management
-          </h1>
-          <p className="text-gray-300">Review and manage all student room requests</p>
-        </div>
+    <div className="space-y-6 mt-4 md:mt-8">
+      <PageHeader
+        icon={Building2}
+        title="Room Requests Management"
+        subtitle="Review and manage all student room requests"
+      />
 
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 bg-green-900 border border-green-500 rounded-lg p-4 flex items-start gap-3 animate-pulse">
-            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-green-100">{success}</p>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-900 border border-red-500 rounded-lg p-4 flex items-start gap-3">
-            <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-red-100">{error}</p>
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total', value: statusCounts.all, color: 'from-purple-600 to-purple-700', icon: Users },
-            { label: 'Pending', value: statusCounts.pending, color: 'from-yellow-600 to-yellow-700', icon: Clock },
-            { label: 'Approved', value: statusCounts.approved, color: 'from-green-600 to-green-700', icon: CheckCircle },
-            { label: 'Declined', value: statusCounts.declined, color: 'from-red-600 to-red-700', icon: XCircle },
-          ].map(({ label, value, color, icon: Icon }) => (
-            <div key={label} className={`bg-gradient-to-br ${color} rounded-lg p-4 shadow-lg`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-200 text-sm font-medium">{label}</p>
-                  <p className="text-3xl font-bold text-white">{value}</p>
-                </div>
-                <Icon className="w-8 h-8 text-white opacity-30" />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total', value: statusCounts.all, icon: Users },
+          { label: 'Pending', value: statusCounts.pending, icon: Clock },
+          { label: 'Approved', value: statusCounts.approved, icon: CheckCircle },
+          { label: 'Declined', value: statusCounts.declined, icon: XCircle },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm font-medium">{label}</p>
+                <p className="text-3xl font-bold text-gray-900">{value}</p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-blue-900/5 text-blue-900 flex items-center justify-center">
+                <Icon className="w-5 h-5" />
               </div>
             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, email, matric number, or room..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
+          />
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          {['all', 'pending', 'approved', 'declined'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                statusFilter === status
+                  ? 'bg-blue-900 text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </button>
           ))}
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, matric number, or room..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-purple-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex gap-2 flex-wrap">
-            {['all', 'pending', 'approved', 'declined'].map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  statusFilter === status
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Loading State */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-96 gap-4">
-            <Loader className="w-12 h-12 text-purple-400 animate-spin" />
-            <p className="text-gray-300">Loading room requests...</p>
-          </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="text-center py-16">
-            <Building2 className="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-50" />
-            <p className="text-gray-400 text-lg">No room requests found</p>
-          </div>
-        ) : (
-          <>
-            {/* Requests Table - Desktop View */}
-            <div className="hidden md:block bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-slate-700 to-slate-600 border-b border-slate-600">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Student</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Email</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Room</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Bed</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Status</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Date</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-200">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRequests.map((request, idx) => (
-                      <tr
-                        key={request._id}
-                        className={`border-b border-slate-700 hover:bg-slate-700/50 transition ${
-                          idx % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-800'
-                        }`}
-                      >
+      {/* Loading State */}
+      {loading ? (
+        <TableSkeleton rows={6} cols={7} />
+      ) : filteredRequests.length === 0 ? (
+        <EmptyState
+          icon={Building2}
+          title="No room requests found"
+          message="Try adjusting your search or status filter."
+        />
+      ) : (
+        <>
+          {/* Requests Table - Desktop View */}
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    <th className="px-6 py-3.5 text-left">Student</th>
+                    <th className="px-6 py-3.5 text-left">Email</th>
+                    <th className="px-6 py-3.5 text-left">Room</th>
+                    <th className="px-6 py-3.5 text-left">Bed</th>
+                    <th className="px-6 py-3.5 text-left">Room Occupancy</th>
+                    <th className="px-6 py-3.5 text-left">Status</th>
+                    <th className="px-6 py-3.5 text-left">Date</th>
+                    <th className="px-6 py-3.5 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedRequests.map((request) => {
+                    const roomInfo = getRoomOccupancy(request.room);
+                    return (
+                      <tr key={request._id} className="hover:bg-gray-50/60 transition-colors">
                         <td className="px-6 py-4">
-                          <div>
-                            <p className="font-semibold text-white">
-                              {request.student?.firstName} {request.student?.lastName}
-                            </p>
-                            <p className="text-xs text-gray-400">{request.student?.matricNumber}</p>
-                          </div>
+                          <p className="font-medium text-gray-900">
+                            {request.student?.firstName} {request.student?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">{request.student?.matricNumber}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-gray-300 text-sm">{request.student?.email}</p>
+                          <p className="text-gray-600 text-sm">{request.student?.email}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="font-semibold text-white">
+                          <p className="font-medium text-gray-900">
                             {request.room?.roomNumber} ({request.room?.roomBlock})
                           </p>
-                          <p className="text-xs text-gray-400">{request.room?.hostelId?.name}</p>
+                          <p className="text-xs text-gray-500">{request.room?.hostelId?.name}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="bg-blue-900 text-blue-100 px-3 py-1 rounded-full text-sm font-semibold">
+                          <span className="bg-blue-50 text-blue-900 px-2.5 py-1 rounded-full text-xs font-semibold">
                             Bed {request.bed + 1}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(
-                              request.status
-                            )}`}
-                          >
-                            {getStatusIcon(request.status)}
-                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                          </span>
+                          {roomInfo ? (
+                            <span
+                              className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
+                                roomInfo.isFull
+                                  ? 'bg-red-50 text-red-700 border-red-200'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              }`}
+                            >
+                              <BedDouble className="w-3.5 h-3.5" />
+                              {roomInfo.occupancy}/{roomInfo.capacity} beds
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">N/A</span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-gray-400 text-sm">
+                          <StatusBadge status={request.status} />
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-gray-500 text-sm">
                             {new Date(request.createdAt).toLocaleDateString()}
                           </p>
                         </td>
@@ -323,26 +342,26 @@ export default function AllRoomRequestsPage() {
                             {request.status === 'pending' && (
                               <>
                                 <button
-                                  onClick={() => handleApprove(request._id)}
+                                  onClick={() => openApproveConfirm(request)}
                                   disabled={actionLoading === request._id}
-                                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg font-semibold text-sm transition flex items-center gap-2 disabled:opacity-50"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-900 text-white text-xs font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-60"
                                 >
                                   {actionLoading === request._id ? (
-                                    <Loader className="w-4 h-4 animate-spin" />
+                                    <Loader className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
-                                    <Check className="w-4 h-4" />
+                                    <Check className="w-3.5 h-3.5" />
                                   )}
                                   Approve
                                 </button>
                                 <button
-                                  onClick={() => handleDecline(request._id)}
+                                  onClick={() => openDeclineConfirm(request)}
                                   disabled={actionLoading === request._id}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-sm transition flex items-center gap-2 disabled:opacity-50"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50 transition-colors disabled:opacity-60"
                                 >
                                   {actionLoading === request._id ? (
-                                    <Loader className="w-4 h-4 animate-spin" />
+                                    <Loader className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
-                                    <X className="w-4 h-4" />
+                                    <X className="w-3.5 h-3.5" />
                                   )}
                                   Decline
                                 </button>
@@ -351,85 +370,88 @@ export default function AllRoomRequestsPage() {
                             {request.status !== 'pending' && (
                               <button
                                 onClick={() => setSelectedRequest(request)}
-                                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg font-semibold text-sm transition flex items-center gap-2"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
                               >
-                                <Eye className="w-4 h-4" />
+                                <Eye className="w-3.5 h-3.5" />
                                 View
                               </button>
                             )}
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+          </div>
 
-            {/* Requests Cards - Mobile View */}
-            <div className="md:hidden space-y-4">
-              {filteredRequests.map((request) => (
+          {/* Requests Cards - Mobile View */}
+          <div className="md:hidden space-y-4">
+            {paginatedRequests.map((request) => {
+              const roomInfo = getRoomOccupancy(request.room);
+              return (
                 <div
                   key={request._id}
-                  className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3"
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3"
                 >
-                  {/* Header */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-bold text-white">
+                      <h3 className="font-semibold text-gray-900">
                         {request.student?.firstName} {request.student?.lastName}
                       </h3>
-                      <p className="text-xs text-gray-400">{request.student?.matricNumber}</p>
+                      <p className="text-xs text-gray-500">{request.student?.matricNumber}</p>
                     </div>
-                    <span
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                        request.status
-                      )}`}
-                    >
-                      {getStatusIcon(request.status)}
-                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                    </span>
+                    <StatusBadge status={request.status} />
                   </div>
 
-                  {/* Contact Info */}
-                  <div className="bg-slate-700 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Mail className="w-4 h-4 text-purple-400" />
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Mail className="w-4 h-4 text-blue-900" />
                       {request.student?.email}
                     </div>
                   </div>
 
-                  {/* Room Info */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-700 rounded-lg p-3">
-                      <p className="text-xs text-gray-400">Room</p>
-                      <p className="font-semibold text-white">{request.room?.roomNumber}</p>
-                      <p className="text-xs text-gray-400">{request.room?.roomBlock}</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Room</p>
+                      <p className="font-semibold text-gray-900">{request.room?.roomNumber}</p>
+                      <p className="text-xs text-gray-500">{request.room?.roomBlock}</p>
                     </div>
-                    <div className="bg-slate-700 rounded-lg p-3">
-                      <p className="text-xs text-gray-400">Bed</p>
-                      <p className="font-semibold text-white text-lg">Bed {request.bed + 1}</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Bed</p>
+                      <p className="font-semibold text-gray-900 text-lg">Bed {request.bed + 1}</p>
                     </div>
                   </div>
 
-                  {/* Hostel and Date */}
+                  {roomInfo && (
+                    <div
+                      className={`rounded-lg p-3 flex items-center gap-2 text-sm ${
+                        roomInfo.isFull ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                      }`}
+                    >
+                      <BedDouble className="w-4 h-4" />
+                      {roomInfo.occupancy}/{roomInfo.capacity} beds occupied
+                      {roomInfo.isFull && <span className="font-semibold">— Room full</span>}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1 text-gray-400">
+                    <div className="flex items-center gap-1 text-gray-500">
                       <MapPin className="w-4 h-4" />
                       <span>{request.room?.hostelId?.name}</span>
                     </div>
-                    <span className="text-gray-400">
+                    <span className="text-gray-500">
                       {new Date(request.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 
-                  {/* Actions */}
                   {request.status === 'pending' && (
-                    <div className="flex gap-2 pt-2 border-t border-slate-600">
+                    <div className="flex gap-2 pt-2 border-t border-gray-100">
                       <button
-                        onClick={() => handleApprove(request._id)}
+                        onClick={() => openApproveConfirm(request)}
                         disabled={actionLoading === request._id}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-60"
                       >
                         {actionLoading === request._id ? (
                           <Loader className="w-4 h-4 animate-spin" />
@@ -439,9 +461,9 @@ export default function AllRoomRequestsPage() {
                         Approve
                       </button>
                       <button
-                        onClick={() => handleDecline(request._id)}
+                        onClick={() => openDeclineConfirm(request)}
                         disabled={actionLoading === request._id}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors disabled:opacity-60"
                       >
                         {actionLoading === request._id ? (
                           <Loader className="w-4 h-4 animate-spin" />
@@ -453,128 +475,173 @@ export default function AllRoomRequestsPage() {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </>
-        )}
+              );
+            })}
+          </div>
 
-        {/* Detail Modal */}
-        {selectedRequest && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredRequests.length}
+            pageSize={PAGE_SIZE}
+          />
+        </>
+      )}
+
+      {/* Detail Modal */}
+      {selectedRequest && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedRequest(null)}
+        >
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
-            onClick={() => setSelectedRequest(null)}
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-6 border border-gray-100 shadow-2xl max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="bg-slate-800 rounded-xl max-w-2xl w-full p-6 space-y-6 border border-purple-500 max-h-96 overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">Request Details</h2>
-                <button
-                  onClick={() => setSelectedRequest(null)}
-                  className="text-gray-400 hover:text-white transition"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Student Info */}
-              <div className="bg-slate-700 rounded-lg p-4 space-y-3">
-                <h3 className="font-semibold text-white">Student Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-400">Full Name</p>
-                    <p className="text-white font-semibold">
-                      {selectedRequest.student?.firstName} {selectedRequest.student?.lastName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Matric Number</p>
-                    <p className="text-white font-semibold">{selectedRequest.student?.matricNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Email</p>
-                    <p className="text-white font-semibold">{selectedRequest.student?.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Phone</p>
-                    <p className="text-white font-semibold">{selectedRequest.student?.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Department</p>
-                    <p className="text-white font-semibold">{selectedRequest.student?.department}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Level</p>
-                    <p className="text-white font-semibold">{selectedRequest.student?.level}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Room Info */}
-              <div className="bg-slate-700 rounded-lg p-4 space-y-3">
-                <h3 className="font-semibold text-white">Room Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-400">Hostel</p>
-                    <p className="text-white font-semibold">{selectedRequest.room?.hostelId?.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Room Number</p>
-                    <p className="text-white font-semibold">{selectedRequest.room?.roomNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Block</p>
-                    <p className="text-white font-semibold">{selectedRequest.room?.roomBlock}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Floor</p>
-                    <p className="text-white font-semibold">{selectedRequest.room?.roomFloor}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Selected Bed</p>
-                    <p className="text-white font-semibold">Bed {selectedRequest.bed + 1}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Status</p>
-                    <span
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                        selectedRequest.status
-                      )}`}
-                    >
-                      {getStatusIcon(selectedRequest.status)}
-                      {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Request Date */}
-              <div className="bg-slate-700 rounded-lg p-4">
-                <p className="text-xs text-gray-400">Request Date</p>
-                <p className="text-white font-semibold">
-                  {new Date(selectedRequest.createdAt).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-
-              {/* Close Button */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Request Details</h2>
               <button
                 onClick={() => setSelectedRequest(null)}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition"
+                className="text-gray-400 hover:text-gray-600 transition"
               >
-                Close
+                <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Student Info */}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <h3 className="font-semibold text-gray-900 text-sm">Student Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Full Name</p>
+                  <p className="text-gray-900 font-medium">
+                    {selectedRequest.student?.firstName} {selectedRequest.student?.lastName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Matric Number</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.student?.matricNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Email</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.student?.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Phone</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.student?.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Department</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.student?.department || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Level</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.student?.level || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Room Info */}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <h3 className="font-semibold text-gray-900 text-sm">Room Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Hostel</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.room?.hostelId?.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Room Number</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.room?.roomNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Block</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.room?.roomBlock}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Floor</p>
+                  <p className="text-gray-900 font-medium">{selectedRequest.room?.roomFloor}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Selected Bed</p>
+                  <p className="text-gray-900 font-medium">Bed {selectedRequest.bed + 1}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Status</p>
+                  <StatusBadge status={selectedRequest.status} />
+                </div>
+              </div>
+              {(() => {
+                const roomInfo = getRoomOccupancy(selectedRequest.room);
+                if (!roomInfo) return null;
+                return (
+                  <div
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
+                      roomInfo.isFull ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                    }`}
+                  >
+                    <BedDouble className="w-4 h-4" />
+                    {roomInfo.occupancy}/{roomInfo.capacity} beds occupied
+                    {roomInfo.isFull && <span>— Room is currently full</span>}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Request Date */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-xs text-gray-500">Request Date</p>
+              <p className="text-gray-900 font-medium">
+                {new Date(selectedRequest.createdAt).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setSelectedRequest(null)}
+              className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors"
+            >
+              Close
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Approve/Decline Confirmation */}
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.type === 'approve' ? 'Approve room request?' : 'Decline room request?'}
+        message={
+          confirmRequest
+            ? confirmState.type === 'approve'
+              ? `Approve ${confirmRequest.student?.firstName} ${confirmRequest.student?.lastName}'s request for Room ${confirmRequest.room?.roomNumber}, Bed ${confirmRequest.bed + 1}? This will immediately assign them to the room.${
+                  confirmRoomInfo
+                    ? ` This room currently has ${confirmRoomInfo.occupancy}/${confirmRoomInfo.capacity} beds occupied.${confirmRoomInfo.isFull ? ' Warning: the room is already full.' : ''}`
+                    : ''
+                }`
+              : `Decline ${confirmRequest.student?.firstName} ${confirmRequest.student?.lastName}'s request for Room ${confirmRequest.room?.roomNumber}, Bed ${confirmRequest.bed + 1}? This action cannot be undone.`
+            : ''
+        }
+        confirmLabel={confirmState.type === 'approve' ? 'Approve' : 'Decline'}
+        cancelLabel="Cancel"
+        tone={confirmState.type === 'approve' ? 'primary' : 'danger'}
+        isLoading={!!actionLoading}
+        onConfirm={() => {
+          if (!confirmRequest) return;
+          if (confirmState.type === 'approve') {
+            doApprove(confirmRequest._id);
+          } else {
+            doDecline(confirmRequest._id);
+          }
+        }}
+        onClose={closeConfirm}
+      />
     </div>
   );
 }

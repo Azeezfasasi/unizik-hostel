@@ -1,9 +1,15 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, Eye, EyeOff, ArrowUpDown, Upload } from 'lucide-react'
+import { Plus, Trash2, Edit2, Eye, EyeOff, ArrowUpDown, Upload, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { notify } from '@/components/dashboard-component/ui/toast'
+import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal'
+import PageHeader from '@/components/dashboard-component/ui/PageHeader'
+import EmptyState from '@/components/dashboard-component/ui/EmptyState'
+import { TableSkeleton } from '@/components/dashboard-component/ui/Skeleton'
 
-export default function HeroContent() {
+function HeroContentInner() {
   const [slides, setSlides] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -19,7 +25,8 @@ export default function HeroContent() {
     isActive: true
   })
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch slides on mount
   useEffect(() => {
@@ -66,15 +73,14 @@ export default function HeroContent() {
             src: result.secure_url
           }
         }))
-        setSuccess('Image uploaded successfully')
-        setTimeout(() => setSuccess(''), 3000)
+        notify.success('Image uploaded successfully')
       } else {
         const error = await response.json()
-        setError(error.error || 'Failed to upload image')
+        notify.error(error.error || 'Failed to upload image')
       }
     } catch (error) {
       console.error('Upload error:', error)
-      setError(error.message || 'Failed to upload image')
+      notify.error(error.message || 'Failed to upload image')
     } finally {
       setUploading(false)
     }
@@ -103,11 +109,10 @@ export default function HeroContent() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setSuccess('')
 
     // Validation
     if (!formData.title || !formData.subtitle || !formData.cta.label || !formData.cta.href) {
-      setError('Please fill in all required fields')
+      notify.error('Please fill in all required fields')
       return
     }
 
@@ -124,16 +129,15 @@ export default function HeroContent() {
       const result = await res.json()
 
       if (result.success) {
-        setSuccess(editingId ? 'Slide updated successfully' : 'Slide created successfully')
+        notify.success(editingId ? 'Slide updated successfully' : 'Slide created successfully')
         fetchSlides()
         resetForm()
         setShowForm(false)
-        setTimeout(() => setSuccess(''), 3000)
       } else {
-        setError(result.error || 'Operation failed')
+        notify.error(result.error || 'Operation failed')
       }
     } catch (err) {
-      setError('Failed to save slide')
+      notify.error('Failed to save slide')
       console.error(err)
     }
   }
@@ -145,23 +149,29 @@ export default function HeroContent() {
     window.scrollTo(0, 0)
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this slide?')) return
+  const handleDeleteClick = (slide) => {
+    setDeleteTarget(slide)
+  }
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/hero/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/hero/${deleteTarget._id}`, { method: 'DELETE' })
       const result = await res.json()
 
       if (result.success) {
-        setSuccess('Slide deleted successfully')
+        notify.success('Slide deleted successfully')
         fetchSlides()
-        setTimeout(() => setSuccess(''), 3000)
+        setDeleteTarget(null)
       } else {
-        setError(result.error || 'Failed to delete slide')
+        notify.error(result.error || 'Failed to delete slide')
       }
     } catch (err) {
-      setError('Failed to delete slide')
+      notify.error('Failed to delete slide')
       console.error(err)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -178,7 +188,7 @@ export default function HeroContent() {
         fetchSlides()
       }
     } catch (err) {
-      setError('Failed to toggle slide visibility')
+      notify.error('Failed to toggle slide visibility')
       console.error(err)
     }
   }
@@ -196,7 +206,7 @@ export default function HeroContent() {
         fetchSlides()
       }
     } catch (err) {
-      setError('Failed to reorder slide')
+      notify.error('Failed to reorder slide')
       console.error(err)
     }
   }
@@ -217,32 +227,30 @@ export default function HeroContent() {
   return (
     <div className="p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Hero Slider Management</h1>
-          <button
-            onClick={() => { resetForm(); setShowForm(!showForm) }}
-            className="flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
-          >
-            <Plus size={18} /> {showForm ? 'Cancel' : 'Add Slide'}
-          </button>
-        </div>
+        <PageHeader
+          icon={ImageIcon}
+          title="Hero Slider Management"
+          subtitle="Manage the rotating slides shown on the homepage hero section"
+          actions={
+            <button
+              onClick={() => { resetForm(); setShowForm(!showForm) }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
+            >
+              <Plus size={18} /> {showForm ? 'Cancel' : 'Add Slide'}
+            </button>
+          }
+        />
 
         {/* Messages */}
         {error && (
-          <div className="mb-4 p-3 sm:p-4 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+          <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
             {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 p-3 sm:p-4 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
-            {success}
           </div>
         )}
 
         {/* Form */}
         {showForm && (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6 overflow-x-hidden">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 overflow-x-hidden">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 break-words">
               {editingId ? 'Edit Slide' : 'Create New Slide'}
             </h2>
@@ -260,7 +268,7 @@ export default function HeroContent() {
                     onChange={handleFormChange}
                     placeholder="Slide title"
                     maxLength={200}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
 
@@ -275,7 +283,7 @@ export default function HeroContent() {
                     value={formData.order}
                     onChange={handleFormChange}
                     min={0}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
               </div>
@@ -292,7 +300,7 @@ export default function HeroContent() {
                   placeholder="Slide subtitle/description"
                   maxLength={500}
                   rows={3}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 />
               </div>
 
@@ -309,7 +317,7 @@ export default function HeroContent() {
                     onChange={handleFormChange}
                     placeholder="e.g., Join Now"
                     maxLength={50}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
 
@@ -325,7 +333,7 @@ export default function HeroContent() {
                     onChange={handleFormChange}
                     // readOnly
                     placeholder="e.g., /join-us"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                 </div>
               </div>
@@ -341,7 +349,7 @@ export default function HeroContent() {
                   value={formData.bg}
                   onChange={handleFormChange}
                   placeholder="e.g., linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)"
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent overflow-x-auto"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition overflow-x-auto"
                 />
               </div>
 
@@ -380,7 +388,7 @@ export default function HeroContent() {
                     value={formData.image.src}
                     onChange={handleFormChange}
                     placeholder="https://example.com/image.jpg"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                   />
                   <p className="text-xs text-gray-500 mt-2">Leave empty or paste URL directly</p>
                 </div>
@@ -413,7 +421,7 @@ export default function HeroContent() {
                   onChange={handleFormChange}
                   placeholder="Describe the image"
                   maxLength={200}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 transition"
                 />
               </div>
 
@@ -437,13 +445,13 @@ export default function HeroContent() {
                 <button
                   type="button"
                   onClick={() => { resetForm(); setShowForm(false) }}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium text-sm transition"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
                 >
                   {editingId ? 'Update Slide' : 'Create Slide'}
                 </button>
@@ -453,35 +461,32 @@ export default function HeroContent() {
         )}
 
         {/* Slides List */}
-        <div className="bg-white rounded-lg shadow">
+        {loading ? (
+          <TableSkeleton rows={4} cols={5} />
+        ) : slides.length === 0 ? (
+          <EmptyState
+            icon={ImageIcon}
+            title="No slides yet"
+            message="Create one to get started!"
+          />
+        ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Order</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Title</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">CTA</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Status</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Actions</th>
+                <tr className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="px-4 sm:px-6 py-3 text-left">Order</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">Title</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">CTA</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">Status</th>
+                  <th className="px-4 sm:px-6 py-3 text-left">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 sm:px-6 py-4 text-center text-gray-500 text-sm">
-                      Loading slides...
-                    </td>
-                  </tr>
-                ) : slides.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 sm:px-6 py-4 text-center text-gray-500 text-sm">
-                      No slides yet. Create one to get started!
-                    </td>
-                  </tr>
-                ) : (
+              <tbody className="divide-y divide-gray-100">
+                {
                   slides.map((slide) => (
-                    <tr key={slide._id} className="border-b hover:bg-gray-50">
+                    <tr key={slide._id} className="hover:bg-gray-50/60">
                       <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-700">
                         <div className="flex gap-1">
                           <button
@@ -535,7 +540,7 @@ export default function HeroContent() {
                           <Edit2 size={12} /> Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(slide._id)}
+                          onClick={() => handleDeleteClick(slide)}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
                         >
                           <Trash2 size={12} /> Delete
@@ -543,24 +548,16 @@ export default function HeroContent() {
                       </td>
                     </tr>
                   ))
-                )}
+                }
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden divide-y">
-            {loading ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                Loading slides...
-              </div>
-            ) : slides.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                No slides yet. Create one to get started!
-              </div>
-            ) : (
+          <div className="md:hidden divide-y divide-gray-100">
+            {
               slides.map((slide) => (
-                <div key={slide._id} className="p-4 border-b hover:bg-gray-50">
+                <div key={slide._id} className="p-4 hover:bg-gray-50/60">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
                       <p className="font-semibold text-sm text-gray-900">{slide.title}</p>
@@ -613,7 +610,7 @@ export default function HeroContent() {
                       <Edit2 size={12} /> Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(slide._id)}
+                      onClick={() => handleDeleteClick(slide)}
                       className="flex-1 px-2 py-2 bg-red-50 text-red-600 rounded text-xs font-medium hover:bg-red-100 flex items-center justify-center gap-1"
                     >
                       <Trash2 size={12} /> Delete
@@ -621,9 +618,21 @@ export default function HeroContent() {
                   </div>
                 </div>
               ))
-            )}
+            }
           </div>
         </div>
+        )}
+
+        <ConfirmModal
+          isOpen={!!deleteTarget}
+          title="Delete slide?"
+          message={`Are you sure you want to delete "${deleteTarget?.title || 'this slide'}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          tone="danger"
+          isLoading={deleting}
+          onConfirm={handleDeleteConfirm}
+          onClose={() => setDeleteTarget(null)}
+        />
 
         {/* Preview Info */}
         <div className="mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -637,5 +646,13 @@ export default function HeroContent() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function HeroContent() {
+  return (
+    <ProtectedRoute allowedRoles={['super admin', 'admin']}>
+      <HeroContentInner />
+    </ProtectedRoute>
   )
 }
