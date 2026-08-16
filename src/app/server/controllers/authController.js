@@ -25,7 +25,7 @@ export const register = async (req) => {
     await connectDB();
 
     const body = await req.json();
-    const { firstName, lastName, otherName, email, phone, matricNumber, password, confirmPassword, role } = body;
+    const { firstName, lastName, otherName, email, phone, matricNumber, password, confirmPassword } = body;
 
     // Validation
     if (!firstName || !lastName || !email || !password) {
@@ -60,7 +60,7 @@ export const register = async (req) => {
       phone,
       matricNumber,
       password,
-      role: role || "student",
+      role: "student",
       isActive: true,
     });
 

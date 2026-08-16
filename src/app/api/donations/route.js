@@ -1,4 +1,5 @@
 import { connectDB } from '@/app/server/db/connect';
+import { authenticate, isAdmin } from '@/app/server/middleware/auth.js';
 import {
   createDonation,
   getAllDonations,
@@ -11,14 +12,18 @@ export async function POST(req) {
 }
 
 export async function GET(req) {
-  await connectDB();
-  
-  const { searchParams } = new URL(req.url);
-  const isStats = searchParams.get('stats');
+  return authenticate(req, async () => {
+    return isAdmin(req, async () => {
+      await connectDB();
 
-  if (isStats === 'true') {
-    return getDonationStats();
-  }
+      const { searchParams } = new URL(req.url);
+      const isStats = searchParams.get('stats');
 
-  return getAllDonations(req);
+      if (isStats === 'true') {
+        return getDonationStats();
+      }
+
+      return getAllDonations(req);
+    });
+  });
 }

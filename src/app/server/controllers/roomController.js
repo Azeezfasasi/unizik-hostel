@@ -117,7 +117,7 @@ export const createRoomRequest = async (req) => {
     try {
         await connectDB();
         const body = await req.json();
-        const studentId = req.user?.id || body.studentId;
+        const studentId = req.user.id;
         const { roomId, bed } = body;
         
         if (!studentId || !roomId || typeof bed !== 'number') {
@@ -326,7 +326,7 @@ export const bookRoom = async (req) => {
     try {
         await connectDB();
         const body = await req.json();
-        const studentId = req.user?.id || body.studentId;
+        const studentId = req.user.id;
         const { roomId, bedIndex } = body;
         
         if (!studentId || !roomId || typeof bedIndex !== 'number') {

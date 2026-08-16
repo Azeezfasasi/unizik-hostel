@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/app/server/db/connect';
 import Leadership from '@/app/server/models/Leadership';
 import Department from '@/app/server/models/Department';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 // GET all leadership members
 export async function GET(request) {
@@ -56,26 +58,30 @@ export async function GET(request) {
 
 // POST create new leadership member
 export async function POST(request) {
-  try {
-    await connectDB();
-    const body = await request.json();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
+        const body = await request.json();
 
-    if (!body.name || !body.position) {
-      return NextResponse.json(
-        { error: 'Name and position are required' },
-        { status: 400 }
-      );
-    }
+        if (!body.name || !body.position) {
+          return NextResponse.json(
+            { error: 'Name and position are required' },
+            { status: 400 }
+          );
+        }
 
-    const newLeader = new Leadership(body);
-    const saved = await newLeader.save();
+        const newLeader = new Leadership(body);
+        const saved = await newLeader.save();
 
-    return NextResponse.json(saved, { status: 201 });
-  } catch (error) {
-    console.error('Error creating leadership:', error);
-    return NextResponse.json(
-      { error: 'Failed to create leadership member' },
-      { status: 500 }
-    );
-  }
+        return NextResponse.json(saved, { status: 201 });
+      } catch (error) {
+        console.error('Error creating leadership:', error);
+        return NextResponse.json(
+          { error: 'Failed to create leadership member' },
+          { status: 500 }
+        );
+      }
+    });
+  });
 }

@@ -1,5 +1,7 @@
 import ContactDetails from '@/app/server/models/Contactdetails.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/contactdetails
@@ -48,76 +50,80 @@ export async function GET(request) {
  * Create new contact details
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
-    const {
-      phone,
-      whatsapp,
-      email,
-      location,
-      latitude,
-      longitude,
-      businessHours,
-      facebookUrl,
-      linkedinUrl,
-      instagramUrl,
-      isActive,
-      createdBy
-    } = body;
+        const body = await request.json();
+        const {
+          phone,
+          whatsapp,
+          email,
+          location,
+          latitude,
+          longitude,
+          businessHours,
+          facebookUrl,
+          linkedinUrl,
+          instagramUrl,
+          isActive,
+          createdBy
+        } = body;
 
-    // Validation
-    if (!phone || !whatsapp || !email || !location || !businessHours) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Missing required fields: phone, whatsapp, email, location, businessHours'
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
+        // Validation
+        if (!phone || !whatsapp || !email || !location || !businessHours) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Missing required fields: phone, whatsapp, email, location, businessHours'
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
         }
-      );
-    }
 
-    const contactDetail = await ContactDetails.create({
-      phone,
-      whatsapp,
-      email,
-      location,
-      latitude,
-      longitude,
-      businessHours,
-      facebookUrl,
-      linkedinUrl,
-      instagramUrl,
-      isActive: isActive !== undefined ? isActive : true,
-      createdBy
+        const contactDetail = await ContactDetails.create({
+          phone,
+          whatsapp,
+          email,
+          location,
+          latitude,
+          longitude,
+          businessHours,
+          facebookUrl,
+          linkedinUrl,
+          instagramUrl,
+          isActive: isActive !== undefined ? isActive : true,
+          createdBy
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: contactDetail,
+            message: 'Contact details created successfully'
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error creating contact details:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to create contact details'
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
     });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: contactDetail,
-        message: 'Contact details created successfully'
-      }),
-      {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error) {
-    console.error('Error creating contact details:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to create contact details'
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
+  });
 }

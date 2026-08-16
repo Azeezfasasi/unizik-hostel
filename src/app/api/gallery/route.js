@@ -3,6 +3,8 @@ import {
   createGallery,
   getAllGalleries,
 } from '@/app/server/controllers/galleryController';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 export async function GET(req) {
   try {
@@ -60,42 +62,46 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  try {
-    await connectDB();
+  return authenticate(req, async () => {
+    return isAdmin(req, async () => {
+      try {
+        await connectDB();
 
-    const body = await req.json();
+        const body = await req.json();
 
-    let statusCode = 201;
-    let responseData = null;
+        let statusCode = 201;
+        let responseData = null;
 
-    const mockRes = {
-      status: function(code) {
-        statusCode = code;
-        return this;
-      },
-      json: function(data) {
-        responseData = data;
-        return data;
-      },
-    };
+        const mockRes = {
+          status: function(code) {
+            statusCode = code;
+            return this;
+          },
+          json: function(data) {
+            responseData = data;
+            return data;
+          },
+        };
 
-    const mockReq = {
-      body,
-    };
+        const mockReq = {
+          body,
+        };
 
-    await createGallery(mockReq, mockRes);
+        await createGallery(mockReq, mockRes);
 
-    return Response.json(responseData, { status: statusCode });
-  } catch (error) {
-    console.error('Gallery POST error:', error);
-    console.error('Error stack:', error.stack);
-    return Response.json(
-      {
-        message: 'Error creating gallery',
-        error: error.message,
-        details: error.stack,
-      },
-      { status: 500 }
-    );
-  }
+        return Response.json(responseData, { status: statusCode });
+      } catch (error) {
+        console.error('Gallery POST error:', error);
+        console.error('Error stack:', error.stack);
+        return Response.json(
+          {
+            message: 'Error creating gallery',
+            error: error.message,
+            details: error.stack,
+          },
+          { status: 500 }
+        );
+      }
+    });
+  });
 }

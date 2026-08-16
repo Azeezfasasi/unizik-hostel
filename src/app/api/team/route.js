@@ -1,5 +1,7 @@
 import Team from '@/app/server/models/Team.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/team
@@ -45,42 +47,46 @@ export async function GET(request) {
  * Create new team member
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
+        const body = await request.json();
 
-    if (!body.name || !body.position || !body.photo?.url) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Please provide name, position, and photo URL'
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+        if (!body.name || !body.position || !body.photo?.url) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Please provide name, position, and photo URL'
+            }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
 
-    const teamMember = await Team.create(body);
+        const teamMember = await Team.create(body);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: teamMember,
-        message: 'Team member created successfully'
-      }),
-      {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: teamMember,
+            message: 'Team member created successfully'
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error creating team member:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to create team member'
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-    );
-  } catch (error) {
-    console.error('Error creating team member:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to create team member'
-      }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+    });
+  });
 }

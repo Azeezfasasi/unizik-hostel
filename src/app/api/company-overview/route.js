@@ -1,5 +1,7 @@
 import CompanyOverview from '@/app/server/models/Companyoverview.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/company-overview
@@ -57,44 +59,48 @@ export async function GET(request) {
  * Create new company overview (only one allowed)
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
+        const body = await request.json();
 
-    // Check if overview already exists
-    const existingOverview = await CompanyOverview.findOne();
-    if (existingOverview) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Company overview already exists. Please use PUT to update.'
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+        // Check if overview already exists
+        const existingOverview = await CompanyOverview.findOne();
+        if (existingOverview) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Company overview already exists. Please use PUT to update.'
+            }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
 
-    const overview = await CompanyOverview.create(body);
+        const overview = await CompanyOverview.create(body);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: overview,
-        message: 'Company overview created successfully'
-      }),
-      {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: overview,
+            message: 'Company overview created successfully'
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error creating company overview:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to create company overview'
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-    );
-  } catch (error) {
-    console.error('Error creating company overview:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to create company overview'
-      }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+    });
+  });
 }

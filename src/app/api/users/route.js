@@ -3,9 +3,11 @@ import { getAllUsers, createUserByAdmin } from "@/app/server/controllers/authCon
 
 // GET /api/users
 export async function GET(req) {
-  // List all users (authenticated users can view)
+  // List all users (admin only)
   return authenticate(req, async () => {
-    return getAllUsers(req);
+    return isAdmin(req, async () => {
+      return getAllUsers(req);
+    });
   });
 }
 

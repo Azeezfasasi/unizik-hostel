@@ -7,6 +7,8 @@ import {
   deleteImage,
   addImagesToGallery,
 } from '@/app/server/controllers/galleryController';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 export async function GET(req, { params }) {
   try {
@@ -48,94 +50,102 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
-  try {
-    await connectDB();
+  return authenticate(req, async () => {
+    return isAdmin(req, async () => {
+      try {
+        await connectDB();
 
-    const { id } = await params;
-    const body = await req.json();
+        const { id } = await params;
+        const body = await req.json();
 
-    let statusCode = 200;
-    let responseData = null;
+        let statusCode = 200;
+        let responseData = null;
 
-    const mockRes = {
-      status: function(code) {
-        statusCode = code;
-        return this;
-      },
-      json: function(data) {
-        responseData = data;
-        return data;
-      },
-    };
+        const mockRes = {
+          status: function(code) {
+            statusCode = code;
+            return this;
+          },
+          json: function(data) {
+            responseData = data;
+            return data;
+          },
+        };
 
-    const mockReq = {
-      params: { id },
-      body,
-    };
+        const mockReq = {
+          params: { id },
+          body,
+        };
 
-    // Determine which operation to perform
-    if (body.imageOrder) {
-      // Reorder images
-      await reorderImages(mockReq, mockRes);
-    } else if (body.operation === 'addImages') {
-      // Add images to gallery
-      await addImagesToGallery(mockReq, mockRes);
-    } else if (body.operation === 'deleteImage') {
-      // Delete single image
-      await deleteImage(mockReq, mockRes);
-    } else {
-      // Update gallery
-      await updateGallery(mockReq, mockRes);
-    }
+        // Determine which operation to perform
+        if (body.imageOrder) {
+          // Reorder images
+          await reorderImages(mockReq, mockRes);
+        } else if (body.operation === 'addImages') {
+          // Add images to gallery
+          await addImagesToGallery(mockReq, mockRes);
+        } else if (body.operation === 'deleteImage') {
+          // Delete single image
+          await deleteImage(mockReq, mockRes);
+        } else {
+          // Update gallery
+          await updateGallery(mockReq, mockRes);
+        }
 
-    return Response.json(responseData, { status: statusCode });
-  } catch (error) {
-    console.error('Gallery PUT error:', error);
-    return Response.json(
-      {
-        message: 'Error updating gallery',
-        error: error.message,
-      },
-      { status: 500 }
-    );
-  }
+        return Response.json(responseData, { status: statusCode });
+      } catch (error) {
+        console.error('Gallery PUT error:', error);
+        return Response.json(
+          {
+            message: 'Error updating gallery',
+            error: error.message,
+          },
+          { status: 500 }
+        );
+      }
+    });
+  });
 }
 
 export async function DELETE(req, { params }) {
-  try {
-    await connectDB();
+  return authenticate(req, async () => {
+    return isAdmin(req, async () => {
+      try {
+        await connectDB();
 
-    const { id } = await params;
+        const { id } = await params;
 
-    let statusCode = 200;
-    let responseData = null;
+        let statusCode = 200;
+        let responseData = null;
 
-    const mockRes = {
-      status: function(code) {
-        statusCode = code;
-        return this;
-      },
-      json: function(data) {
-        responseData = data;
-        return data;
-      },
-    };
+        const mockRes = {
+          status: function(code) {
+            statusCode = code;
+            return this;
+          },
+          json: function(data) {
+            responseData = data;
+            return data;
+          },
+        };
 
-    const mockReq = {
-      params: { id },
-    };
+        const mockReq = {
+          params: { id },
+        };
 
-    await deleteGallery(mockReq, mockRes);
+        await deleteGallery(mockReq, mockRes);
 
-    return Response.json(responseData, { status: statusCode });
-  } catch (error) {
-    console.error('Gallery DELETE error:', error);
-    return Response.json(
-      {
-        message: 'Error deleting gallery',
-        error: error.message,
-      },
-      { status: 500 }
-    );
-  }
+        return Response.json(responseData, { status: statusCode });
+      } catch (error) {
+        console.error('Gallery DELETE error:', error);
+        return Response.json(
+          {
+            message: 'Error deleting gallery',
+            error: error.message,
+          },
+          { status: 500 }
+        );
+      }
+    });
+  });
 }

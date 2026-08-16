@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/app/server/db/connect';
 import Department from '@/app/server/models/Department';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 // GET all departments
 export async function GET(request) {
@@ -32,50 +34,54 @@ export async function GET(request) {
 
 // POST create new department
 export async function POST(request) {
-  try {
-    await connectDB();
-    const body = await request.json();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
+        const body = await request.json();
 
-    const { name, description, displayOrder } = body;
+        const { name, description, displayOrder } = body;
 
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Department name is required' },
-        { status: 400 }
-      );
-    }
+        if (!name) {
+          return NextResponse.json(
+            { error: 'Department name is required' },
+            { status: 400 }
+          );
+        }
 
-    // Generate slug from name
-    const slug = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
+        // Generate slug from name
+        const slug = name
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-');
 
-    // Check if department already exists
-    const existing = await Department.findOne({ slug });
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Department already exists' },
-        { status: 400 }
-      );
-    }
+        // Check if department already exists
+        const existing = await Department.findOne({ slug });
+        if (existing) {
+          return NextResponse.json(
+            { error: 'Department already exists' },
+            { status: 400 }
+          );
+        }
 
-    const department = await Department.create({
-      name,
-      slug,
-      description,
-      displayOrder: displayOrder || 0,
-      isActive: true,
+        const department = await Department.create({
+          name,
+          slug,
+          description,
+          displayOrder: displayOrder || 0,
+          isActive: true,
+        });
+
+        return NextResponse.json(department, { status: 201 });
+      } catch (error) {
+        console.error('Error creating department:', error);
+        return NextResponse.json(
+          { error: 'Failed to create department' },
+          { status: 500 }
+        );
+      }
     });
-
-    return NextResponse.json(department, { status: 201 });
-  } catch (error) {
-    console.error('Error creating department:', error);
-    return NextResponse.json(
-      { error: 'Failed to create department' },
-      { status: 500 }
-    );
-  }
+  });
 }

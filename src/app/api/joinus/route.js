@@ -4,6 +4,7 @@ import {
   sendApplicationConfirmation,
   sendAdminNotification,
 } from '@/app/server/services/emailService.js';
+import { authenticate, isAdmin } from '@/app/server/middleware/auth.js';
 
 export async function POST(request) {
   try {
@@ -72,62 +73,66 @@ export async function POST(request) {
 }
 
 export async function GET(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const sortBy = searchParams.get('sortBy');
-    const order = searchParams.get('order') || 'desc';
-    const page = parseInt(searchParams.get('page')) || 1;
-    const limit = parseInt(searchParams.get('limit')) || 10;
+        const { searchParams } = new URL(request.url);
+        const status = searchParams.get('status');
+        const sortBy = searchParams.get('sortBy');
+        const order = searchParams.get('order') || 'desc';
+        const page = parseInt(searchParams.get('page')) || 1;
+        const limit = parseInt(searchParams.get('limit')) || 10;
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    // Build query
-    let query = {};
-    if (status) {
-      query.status = status;
-    }
+        // Build query
+        let query = {};
+        if (status) {
+          query.status = status;
+        }
 
-    // Build sort
-    let sortQuery = {};
-    if (sortBy) {
-      sortQuery[sortBy] = order === 'asc' ? 1 : -1;
-    } else {
-      sortQuery.createdAt = order === 'asc' ? 1 : -1;
-    }
+        // Build sort
+        let sortQuery = {};
+        if (sortBy) {
+          sortQuery[sortBy] = order === 'asc' ? 1 : -1;
+        } else {
+          sortQuery.createdAt = order === 'asc' ? 1 : -1;
+        }
 
-    const applications = await Joinus.find(query)
-      .sort(sortQuery)
-      .skip(skip)
-      .limit(limit)
-      .lean();
+        const applications = await Joinus.find(query)
+          .sort(sortQuery)
+          .skip(skip)
+          .limit(limit)
+          .lean();
 
-    const total = await Joinus.countDocuments(query);
+        const total = await Joinus.countDocuments(query);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: applications,
-        pagination: {
-          total,
-          pages: Math.ceil(total / limit),
-          currentPage: page,
-          pageSize: limit,
-        },
-      }),
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Error fetching applications:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: 'Error fetching applications',
-        error: error.message,
-      }),
-      { status: 500 }
-    );
-  }
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: applications,
+            pagination: {
+              total,
+              pages: Math.ceil(total / limit),
+              currentPage: page,
+              pageSize: limit,
+            },
+          }),
+          { status: 200 }
+        );
+      } catch (error) {
+        console.error('Error fetching applications:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: 'Error fetching applications',
+            error: error.message,
+          }),
+          { status: 500 }
+        );
+      }
+    });
+  });
 }

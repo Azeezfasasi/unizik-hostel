@@ -1,5 +1,7 @@
 import Testimonial from '@/app/server/models/Testimonial.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/testimonial
@@ -48,58 +50,62 @@ export async function GET(request) {
  * Create new testimonial
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
-    const { name, position, message, rating, image, order, isActive } = body;
+        const body = await request.json();
+        const { name, position, message, rating, image, order, isActive } = body;
 
-    // Validation
-    if (!name || !position || !message) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Missing required fields: name, position, message'
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
+        // Validation
+        if (!name || !position || !message) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Missing required fields: name, position, message'
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
         }
-      );
-    }
 
-    const testimonial = await Testimonial.create({
-      name,
-      position,
-      message,
-      rating: rating || 5,
-      image: image || {},
-      order: order || 0,
-      isActive: isActive !== undefined ? isActive : true
+        const testimonial = await Testimonial.create({
+          name,
+          position,
+          message,
+          rating: rating || 5,
+          image: image || {},
+          order: order || 0,
+          isActive: isActive !== undefined ? isActive : true
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: testimonial,
+            message: 'Testimonial created successfully'
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error creating testimonial:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to create testimonial'
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
     });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: testimonial,
-        message: 'Testimonial created successfully'
-      }),
-      {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error) {
-    console.error('Error creating testimonial:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to create testimonial'
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
+  });
 }

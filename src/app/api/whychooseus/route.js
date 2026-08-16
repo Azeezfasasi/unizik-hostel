@@ -1,5 +1,7 @@
 import WhyChooseUs from '@/app/server/models/whychooseus.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/whychooseus
@@ -48,56 +50,60 @@ export async function GET(request) {
  * Create new why choose us feature
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
-    const { title, description, order, isActive, createdBy } = body;
+        const body = await request.json();
+        const { title, description, order, isActive, createdBy } = body;
 
-    // Validation
-    if (!title || !description) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Missing required fields: title, description'
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
+        // Validation
+        if (!title || !description) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Missing required fields: title, description'
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
         }
-      );
-    }
 
-    const feature = await WhyChooseUs.create({
-      title,
-      description,
-      order: order !== undefined ? order : 0,
-      isActive: isActive !== undefined ? isActive : true,
-      createdBy
+        const feature = await WhyChooseUs.create({
+          title,
+          description,
+          order: order !== undefined ? order : 0,
+          isActive: isActive !== undefined ? isActive : true,
+          createdBy
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: feature,
+            message: 'Feature created successfully'
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error creating why choose us feature:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to create why choose us feature'
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
     });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: feature,
-        message: 'Feature created successfully'
-      }),
-      {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error) {
-    console.error('Error creating why choose us feature:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to create why choose us feature'
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
+  });
 }

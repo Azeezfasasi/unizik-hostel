@@ -1,5 +1,7 @@
 import MembershipLevel from '@/app/server/models/MembershipLevel.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/membershiplevel
@@ -58,66 +60,70 @@ export async function GET(request) {
  * Create or update membership levels
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
-    const { levels, benefits, ctaSection, isActive } = body;
+        const body = await request.json();
+        const { levels, benefits, ctaSection, isActive } = body;
 
-    // Validation
-    if (!levels || levels.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Missing required fields: levels array'
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
+        // Validation
+        if (!levels || levels.length === 0) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Missing required fields: levels array'
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
         }
-      );
-    }
 
-    // Find and update or create new
-    let data = await MembershipLevel.findOne({});
+        // Find and update or create new
+        let data = await MembershipLevel.findOne({});
 
-    if (data) {
-      data.levels = levels;
-      data.benefits = benefits || data.benefits;
-      data.ctaSection = ctaSection || data.ctaSection;
-      data.isActive = isActive !== undefined ? isActive : true;
-      await data.save();
-    } else {
-      data = await MembershipLevel.create({
-        levels,
-        benefits,
-        ctaSection,
-        isActive: isActive !== undefined ? isActive : true
-      });
-    }
+        if (data) {
+          data.levels = levels;
+          data.benefits = benefits || data.benefits;
+          data.ctaSection = ctaSection || data.ctaSection;
+          data.isActive = isActive !== undefined ? isActive : true;
+          await data.save();
+        } else {
+          data = await MembershipLevel.create({
+            levels,
+            benefits,
+            ctaSection,
+            isActive: isActive !== undefined ? isActive : true
+          });
+        }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data,
-        message: 'Membership levels saved successfully'
-      }),
-      {
-        status: data ? 200 : 201,
-        headers: { 'Content-Type': 'application/json' }
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data,
+            message: 'Membership levels saved successfully'
+          }),
+          {
+            status: data ? 200 : 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error saving membership levels:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to save membership levels'
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
       }
-    );
-  } catch (error) {
-    console.error('Error saving membership levels:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to save membership levels'
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
+    });
+  });
 }

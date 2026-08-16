@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/app/server/db/connect';
+import { authenticate, isAdmin } from '@/app/server/middleware/auth.js';
 import {
   getBankDetails,
   createBankDetails,
@@ -26,41 +27,49 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  try {
-    await connectDB();
-    const body = await req.json();
-    const result = await createBankDetails(body);
+  return authenticate(req, async () => {
+    return isAdmin(req, async () => {
+      try {
+        await connectDB();
+        const body = await req.json();
+        const result = await createBankDetails(body);
 
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
-    }
+        if (result.error) {
+          return NextResponse.json({ error: result.error }, { status: result.status });
+        }
 
-    return NextResponse.json(result.data, { status: result.status });
-  } catch (error) {
-    console.error('Error in POST /api/bank-details:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+        return NextResponse.json(result.data, { status: result.status });
+      } catch (error) {
+        console.error('Error in POST /api/bank-details:', error);
+        return NextResponse.json(
+          { error: 'Internal server error' },
+          { status: 500 }
+        );
+      }
+    });
+  });
 }
 
 export async function PUT(req) {
-  try {
-    await connectDB();
-    const body = await req.json();
-    const result = await updateBankDetails(body);
+  return authenticate(req, async () => {
+    return isAdmin(req, async () => {
+      try {
+        await connectDB();
+        const body = await req.json();
+        const result = await updateBankDetails(body);
 
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
-    }
+        if (result.error) {
+          return NextResponse.json({ error: result.error }, { status: result.status });
+        }
 
-    return NextResponse.json(result.data, { status: result.status });
-  } catch (error) {
-    console.error('Error in PUT /api/bank-details:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+        return NextResponse.json(result.data, { status: result.status });
+      } catch (error) {
+        console.error('Error in PUT /api/bank-details:', error);
+        return NextResponse.json(
+          { error: 'Internal server error' },
+          { status: 500 }
+        );
+      }
+    });
+  });
 }

@@ -1,5 +1,7 @@
 import Welcome from '@/app/server/models/Welcome.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/welcome
@@ -48,68 +50,72 @@ export async function GET(request) {
  * Create new welcome section
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
-    const {
-      title,
-      description1,
-      description2,
-      image,
-      button,
-      order,
-      isActive,
-      createdBy
-    } = body;
+        const body = await request.json();
+        const {
+          title,
+          description1,
+          description2,
+          image,
+          button,
+          order,
+          isActive,
+          createdBy
+        } = body;
 
-    // Validation
-    if (!title || !description1 || !button?.label || !button?.href) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Missing required fields: title, description1, button.label, button.href'
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
+        // Validation
+        if (!title || !description1 || !button?.label || !button?.href) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Missing required fields: title, description1, button.label, button.href'
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
         }
-      );
-    }
 
-    const section = await Welcome.create({
-      title,
-      description1,
-      description2: description2 || '',
-      image,
-      button,
-      order: order !== undefined ? order : 0,
-      isActive: isActive !== undefined ? isActive : true,
-      createdBy
+        const section = await Welcome.create({
+          title,
+          description1,
+          description2: description2 || '',
+          image,
+          button,
+          order: order !== undefined ? order : 0,
+          isActive: isActive !== undefined ? isActive : true,
+          createdBy
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: section,
+            message: 'Welcome section created successfully'
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error creating welcome section:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to create welcome section'
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
     });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: section,
-        message: 'Welcome section created successfully'
-      }),
-      {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error) {
-    console.error('Error creating welcome section:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to create welcome section'
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
+  });
 }

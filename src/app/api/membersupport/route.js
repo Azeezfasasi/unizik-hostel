@@ -1,5 +1,7 @@
 import MemberSupport from '@/app/server/models/Membersupport.js';
 import { connectDB } from '@/app/server/db/connect.js';
+import { authenticate } from '@/app/server/middleware/auth.js';
+import { isAdmin } from '@/app/server/middleware/auth.js';
 
 /**
  * GET /api/membersupport
@@ -60,80 +62,84 @@ export async function GET(request) {
  * Create or update member support section
  */
 export async function POST(request) {
-  try {
-    await connectDB();
+  return authenticate(request, async () => {
+    return isAdmin(request, async () => {
+      try {
+        await connectDB();
 
-    const body = await request.json();
-    const {
-      sectionTitle,
-      sectionDescription,
-      supportItems,
-      ctaSection,
-      statsSection,
-      isActive,
-      createdBy
-    } = body;
+        const body = await request.json();
+        const {
+          sectionTitle,
+          sectionDescription,
+          supportItems,
+          ctaSection,
+          statsSection,
+          isActive,
+          createdBy
+        } = body;
 
-    // Validation
-    if (!sectionTitle || !sectionDescription || !supportItems || supportItems.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Missing required fields: sectionTitle, sectionDescription, supportItems'
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
+        // Validation
+        if (!sectionTitle || !sectionDescription || !supportItems || supportItems.length === 0) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Missing required fields: sectionTitle, sectionDescription, supportItems'
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
         }
-      );
-    }
 
-    // Find and update or create new
-    let section = await MemberSupport.findOne({});
+        // Find and update or create new
+        let section = await MemberSupport.findOne({});
 
-    if (section) {
-      section.sectionTitle = sectionTitle;
-      section.sectionDescription = sectionDescription;
-      section.supportItems = supportItems;
-      section.ctaSection = ctaSection || section.ctaSection;
-      section.statsSection = statsSection || section.statsSection;
-      section.isActive = isActive !== undefined ? isActive : true;
-      section.updatedBy = createdBy;
-      await section.save();
-    } else {
-      section = await MemberSupport.create({
-        sectionTitle,
-        sectionDescription,
-        supportItems,
-        ctaSection,
-        statsSection,
-        isActive: isActive !== undefined ? isActive : true,
-        createdBy
-      });
-    }
+        if (section) {
+          section.sectionTitle = sectionTitle;
+          section.sectionDescription = sectionDescription;
+          section.supportItems = supportItems;
+          section.ctaSection = ctaSection || section.ctaSection;
+          section.statsSection = statsSection || section.statsSection;
+          section.isActive = isActive !== undefined ? isActive : true;
+          section.updatedBy = createdBy;
+          await section.save();
+        } else {
+          section = await MemberSupport.create({
+            sectionTitle,
+            sectionDescription,
+            supportItems,
+            ctaSection,
+            statsSection,
+            isActive: isActive !== undefined ? isActive : true,
+            createdBy
+          });
+        }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: section,
-        message: 'Member support section saved successfully'
-      }),
-      {
-        status: section ? 200 : 201,
-        headers: { 'Content-Type': 'application/json' }
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: section,
+            message: 'Member support section saved successfully'
+          }),
+          {
+            status: section ? 200 : 201,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (error) {
+        console.error('Error saving member support section:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message || 'Failed to save member support section'
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
       }
-    );
-  } catch (error) {
-    console.error('Error saving member support section:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to save member support section'
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
+    });
+  });
 }

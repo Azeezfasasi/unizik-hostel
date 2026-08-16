@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authenticate, isAdmin } from '@/app/server/middleware/auth.js';
 import {
   subscribeToNewsletter,
   unsubscribeFromNewsletter,
@@ -21,22 +22,6 @@ import {
   bulkUpdateSubscribers,
 } from '@/app/server/controllers/newsletterController.js';
 
-// Middleware to check admin role
-const requireAdmin = (req) => {
-  // This should be implemented with your auth system
-  // For now, we'll check for admin role in session/JWT
-  const adminRole = req.headers.get('x-user-role');
-  if (adminRole !== 'admin') {
-    return false;
-  }
-  return true;
-};
-
-// Get user ID from request (adjust based on your auth system)
-const getUserId = (req) => {
-  return req.headers.get('x-user-id') || 'anonymous';
-};
-
 // ============================================
 // SUBSCRIBER ENDPOINTS
 // ============================================
@@ -47,35 +32,33 @@ export async function GET(request) {
     const pathname = url.pathname;
     const action = url.searchParams.get('action');
 
-    // GET /api/newsletter?action=subscribers
+    // GET /api/newsletter?action=subscribers (admin only - full subscriber list/PII)
     if (action === 'subscribers') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const page = parseInt(url.searchParams.get('page')) || 1;
+          const limit = parseInt(url.searchParams.get('limit')) || 20;
+          const status = url.searchParams.get('status');
+          const search = url.searchParams.get('search') || '';
+          const tags = url.searchParams.getAll('tags');
+          const sortBy = url.searchParams.get('sortBy') || 'subscribedAt';
 
-      const page = parseInt(url.searchParams.get('page')) || 1;
-      const limit = parseInt(url.searchParams.get('limit')) || 20;
-      const status = url.searchParams.get('status');
-      const search = url.searchParams.get('search') || '';
-      const tags = url.searchParams.getAll('tags');
-      const sortBy = url.searchParams.get('sortBy') || 'subscribedAt';
+          const result = await getAllSubscribers({
+            status,
+            page,
+            limit,
+            search,
+            tags,
+            sortBy,
+          });
 
-      const result = await getAllSubscribers({
-        status,
-        page,
-        limit,
-        search,
-        tags,
-        sortBy,
+          return NextResponse.json(result);
+        });
       });
-
-      return NextResponse.json(result);
     }
 
     // GET /api/newsletter?action=subscriber&email=user@example.com
+    // Public: allows a subscriber to look up their own subscription by email
     if (action === 'subscriber') {
       const email = url.searchParams.get('email');
 
@@ -90,63 +73,54 @@ export async function GET(request) {
       return NextResponse.json(result);
     }
 
-    // GET /api/newsletter?action=campaigns
+    // GET /api/newsletter?action=campaigns (admin only)
     if (action === 'campaigns') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const page = parseInt(url.searchParams.get('page')) || 1;
+          const limit = parseInt(url.searchParams.get('limit')) || 20;
+          const status = url.searchParams.get('status');
+          const search = url.searchParams.get('search') || '';
 
-      const page = parseInt(url.searchParams.get('page')) || 1;
-      const limit = parseInt(url.searchParams.get('limit')) || 20;
-      const status = url.searchParams.get('status');
-      const search = url.searchParams.get('search') || '';
+          const result = await getAllCampaigns({
+            status,
+            page,
+            limit,
+            search,
+          });
 
-      const result = await getAllCampaigns({
-        status,
-        page,
-        limit,
-        search,
+          return NextResponse.json(result);
+        });
       });
-
-      return NextResponse.json(result);
     }
 
-    // GET /api/newsletter?action=statistics
+    // GET /api/newsletter?action=statistics (admin only)
     if (action === 'statistics') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-
-      const result = await getNewsletterStatistics();
-      return NextResponse.json(result);
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const result = await getNewsletterStatistics();
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // GET /api/newsletter?action=templates
+    // GET /api/newsletter?action=templates (admin only)
     if (action === 'templates') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const page = parseInt(url.searchParams.get('page')) || 1;
+          const limit = parseInt(url.searchParams.get('limit')) || 20;
+          const category = url.searchParams.get('category');
 
-      const page = parseInt(url.searchParams.get('page')) || 1;
-      const limit = parseInt(url.searchParams.get('limit')) || 20;
-      const category = url.searchParams.get('category');
+          const result = await getAllTemplates({
+            page,
+            limit,
+            category,
+          });
 
-      const result = await getAllTemplates({
-        page,
-        limit,
-        category,
+          return NextResponse.json(result);
+        });
       });
-
-      return NextResponse.json(result);
     }
 
     return NextResponse.json(
@@ -168,13 +142,13 @@ export async function POST(request) {
     const action = url.searchParams.get('action');
     const body = await request.json();
 
-    // POST /api/newsletter?action=subscribe
+    // POST /api/newsletter?action=subscribe (public)
     if (action === 'subscribe') {
       const result = await subscribeToNewsletter(body);
       return NextResponse.json(result);
     }
 
-    // POST /api/newsletter?action=unsubscribe
+    // POST /api/newsletter?action=unsubscribe (public)
     if (action === 'unsubscribe') {
       const { email } = body;
 
@@ -189,144 +163,123 @@ export async function POST(request) {
       return NextResponse.json(result);
     }
 
-    // POST /api/newsletter?action=create-campaign
+    // POST /api/newsletter?action=create-campaign (admin only)
     if (action === 'create-campaign') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-
-      const userId = getUserId(request);
-      const result = await createCampaign(body, userId);
-      return NextResponse.json(result);
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const userId = request.user.id;
+          const result = await createCampaign(body, userId);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // POST /api/newsletter?action=send-campaign
+    // POST /api/newsletter?action=send-campaign (admin only)
     if (action === 'send-campaign') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { campaignId } = body;
 
-      const { campaignId } = body;
+          if (!campaignId) {
+            return NextResponse.json(
+              { success: false, error: 'Campaign ID required' },
+              { status: 400 }
+            );
+          }
 
-      if (!campaignId) {
-        return NextResponse.json(
-          { success: false, error: 'Campaign ID required' },
-          { status: 400 }
-        );
-      }
-
-      const userId = getUserId(request);
-      const result = await sendNewsletter(campaignId, userId);
-      return NextResponse.json(result);
+          const userId = request.user.id;
+          const result = await sendNewsletter(campaignId, userId);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // POST /api/newsletter?action=schedule-campaign
+    // POST /api/newsletter?action=schedule-campaign (admin only)
     if (action === 'schedule-campaign') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { campaignId, scheduledFor } = body;
 
-      const { campaignId, scheduledFor } = body;
+          if (!campaignId || !scheduledFor) {
+            return NextResponse.json(
+              { success: false, error: 'Campaign ID and scheduled time required' },
+              { status: 400 }
+            );
+          }
 
-      if (!campaignId || !scheduledFor) {
-        return NextResponse.json(
-          { success: false, error: 'Campaign ID and scheduled time required' },
-          { status: 400 }
-        );
-      }
-
-      const userId = getUserId(request);
-      const result = await scheduleCampaign(campaignId, scheduledFor, userId);
-      return NextResponse.json(result);
+          const userId = request.user.id;
+          const result = await scheduleCampaign(campaignId, scheduledFor, userId);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // POST /api/newsletter?action=create-template
+    // POST /api/newsletter?action=create-template (admin only)
     if (action === 'create-template') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-
-      const userId = getUserId(request);
-      const result = await createTemplate(body, userId);
-      return NextResponse.json(result);
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const userId = request.user.id;
+          const result = await createTemplate(body, userId);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // POST /api/newsletter?action=bulk-import
+    // POST /api/newsletter?action=bulk-import (admin only)
     if (action === 'bulk-import') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { subscribers } = body;
 
-      const { subscribers } = body;
+          if (!Array.isArray(subscribers)) {
+            return NextResponse.json(
+              { success: false, error: 'Subscribers must be an array' },
+              { status: 400 }
+            );
+          }
 
-      if (!Array.isArray(subscribers)) {
-        return NextResponse.json(
-          { success: false, error: 'Subscribers must be an array' },
-          { status: 400 }
-        );
-      }
-
-      const result = await bulkImportSubscribers(subscribers);
-      return NextResponse.json(result);
+          const result = await bulkImportSubscribers(subscribers);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // POST /api/newsletter?action=bulk-update
+    // POST /api/newsletter?action=bulk-update (admin only)
     if (action === 'bulk-update') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { subscriberIds, updateData } = body;
 
-      const { subscriberIds, updateData } = body;
+          if (!Array.isArray(subscriberIds)) {
+            return NextResponse.json(
+              { success: false, error: 'Subscriber IDs must be an array' },
+              { status: 400 }
+            );
+          }
 
-      if (!Array.isArray(subscriberIds)) {
-        return NextResponse.json(
-          { success: false, error: 'Subscriber IDs must be an array' },
-          { status: 400 }
-        );
-      }
-
-      const result = await bulkUpdateSubscribers(subscriberIds, updateData);
-      return NextResponse.json(result);
+          const result = await bulkUpdateSubscribers(subscriberIds, updateData);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // POST /api/newsletter?action=bulk-delete
+    // POST /api/newsletter?action=bulk-delete (admin only)
     if (action === 'bulk-delete') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { subscriberIds } = body;
 
-      const { subscriberIds } = body;
+          if (!Array.isArray(subscriberIds)) {
+            return NextResponse.json(
+              { success: false, error: 'Subscriber IDs must be an array' },
+              { status: 400 }
+            );
+          }
 
-      if (!Array.isArray(subscriberIds)) {
-        return NextResponse.json(
-          { success: false, error: 'Subscriber IDs must be an array' },
-          { status: 400 }
-        );
-      }
-
-      const result = await bulkDeleteSubscribers(subscriberIds);
-      return NextResponse.json(result);
+          const result = await bulkDeleteSubscribers(subscriberIds);
+          return NextResponse.json(result);
+        });
+      });
     }
 
     return NextResponse.json(
@@ -348,49 +301,43 @@ export async function PUT(request) {
     const action = url.searchParams.get('action');
     const body = await request.json();
 
-    // PUT /api/newsletter?action=update-subscriber
+    // PUT /api/newsletter?action=update-subscriber (admin only)
     if (action === 'update-subscriber') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { email, updateData } = body;
 
-      const { email, updateData } = body;
+          if (!email) {
+            return NextResponse.json(
+              { success: false, error: 'Email required' },
+              { status: 400 }
+            );
+          }
 
-      if (!email) {
-        return NextResponse.json(
-          { success: false, error: 'Email required' },
-          { status: 400 }
-        );
-      }
-
-      const result = await updateSubscriber(email, updateData);
-      return NextResponse.json(result);
+          const result = await updateSubscriber(email, updateData);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // PUT /api/newsletter?action=edit-campaign
+    // PUT /api/newsletter?action=edit-campaign (admin only)
     if (action === 'edit-campaign') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { campaignId, updateData } = body;
 
-      const { campaignId, updateData } = body;
+          if (!campaignId) {
+            return NextResponse.json(
+              { success: false, error: 'Campaign ID required' },
+              { status: 400 }
+            );
+          }
 
-      if (!campaignId) {
-        return NextResponse.json(
-          { success: false, error: 'Campaign ID required' },
-          { status: 400 }
-        );
-      }
-
-      const userId = getUserId(request);
-      const result = await editCampaign(campaignId, updateData, userId);
-      return NextResponse.json(result);
+          const userId = request.user.id;
+          const result = await editCampaign(campaignId, updateData, userId);
+          return NextResponse.json(result);
+        });
+      });
     }
 
     return NextResponse.json(
@@ -412,48 +359,42 @@ export async function DELETE(request) {
     const action = url.searchParams.get('action');
     const body = await request.json();
 
-    // DELETE /api/newsletter?action=delete-subscriber
+    // DELETE /api/newsletter?action=delete-subscriber (admin only)
     if (action === 'delete-subscriber') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { email } = body;
 
-      const { email } = body;
+          if (!email) {
+            return NextResponse.json(
+              { success: false, error: 'Email required' },
+              { status: 400 }
+            );
+          }
 
-      if (!email) {
-        return NextResponse.json(
-          { success: false, error: 'Email required' },
-          { status: 400 }
-        );
-      }
-
-      const result = await deleteSubscriber(email);
-      return NextResponse.json(result);
+          const result = await deleteSubscriber(email);
+          return NextResponse.json(result);
+        });
+      });
     }
 
-    // DELETE /api/newsletter?action=delete-campaign
+    // DELETE /api/newsletter?action=delete-campaign (admin only)
     if (action === 'delete-campaign') {
-      if (!requireAdmin(request)) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      return authenticate(request, async () => {
+        return isAdmin(request, async () => {
+          const { campaignId } = body;
 
-      const { campaignId } = body;
+          if (!campaignId) {
+            return NextResponse.json(
+              { success: false, error: 'Campaign ID required' },
+              { status: 400 }
+            );
+          }
 
-      if (!campaignId) {
-        return NextResponse.json(
-          { success: false, error: 'Campaign ID required' },
-          { status: 400 }
-        );
-      }
-
-      const result = await deleteCampaign(campaignId);
-      return NextResponse.json(result);
+          const result = await deleteCampaign(campaignId);
+          return NextResponse.json(result);
+        });
+      });
     }
 
     return NextResponse.json(

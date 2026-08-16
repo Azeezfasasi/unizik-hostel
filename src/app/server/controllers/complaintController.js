@@ -14,6 +14,12 @@ export const getAllComplaints = async (req) => {
 
     let filter = {};
 
+    // Non-admin callers may only see their own complaints
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'super admin') {
+      filter.studentId = req.user?.id;
+    }
+
     if (status && status !== 'all') {
       filter.status = status;
     }
@@ -82,6 +88,21 @@ export const getComplaintById = async (req, complaintId) => {
       );
     }
 
+    // Ownership check: non-admins may only view their own complaint
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'super admin') {
+      const ownerId = complaint.studentId?._id
+        ? complaint.studentId._id.toString()
+        : complaint.studentId?.toString?.();
+
+      if (!req.user?.id || ownerId !== req.user.id.toString()) {
+        return NextResponse.json(
+          { success: false, message: 'Forbidden: You can only view your own complaint' },
+          { status: 403 }
+        );
+      }
+    }
+
     return NextResponse.json(
       { success: true, data: complaint },
       { status: 200 }
@@ -99,7 +120,28 @@ export const createComplaint = async (req) => {
   try {
     await connectDB();
     const body = await req.json();
-    const { studentId, studentName, studentEmail, category, description, location, phone, priority } = body;
+    const { category, description, location, phone, priority } = body;
+
+    // Identity fields are derived from the authenticated session, never trusted from the client
+    if (!req.user?.id) {
+      return NextResponse.json(
+        { success: false, message: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const studentId = req.user.id;
+    const studentAccount = await User.findById(studentId).select('firstName lastName email');
+
+    if (!studentAccount) {
+      return NextResponse.json(
+        { success: false, message: 'Student account not found' },
+        { status: 404 }
+      );
+    }
+
+    const studentName = `${studentAccount.firstName} ${studentAccount.lastName}`.trim();
+    const studentEmail = studentAccount.email || req.user.email;
 
     // Validation
     if (!studentId || !studentName || !studentEmail || !category || !description || !location) {
@@ -216,6 +258,27 @@ export const addFeedback = async (req, complaintId) => {
         { success: false, message: 'Feedback and rating are required' },
         { status: 400 }
       );
+    }
+
+    const existingComplaint = await Complaint.findById(complaintId);
+
+    if (!existingComplaint) {
+      return NextResponse.json(
+        { success: false, message: 'Complaint not found' },
+        { status: 404 }
+      );
+    }
+
+    // Ownership check: only the complaint's own student, or an admin, may add feedback
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'super admin') {
+      const ownerId = existingComplaint.studentId?.toString?.();
+      if (!req.user?.id || ownerId !== req.user.id.toString()) {
+        return NextResponse.json(
+          { success: false, message: 'Forbidden: You can only give feedback on your own complaint' },
+          { status: 403 }
+        );
+      }
     }
 
     const complaint = await Complaint.findByIdAndUpdate(
