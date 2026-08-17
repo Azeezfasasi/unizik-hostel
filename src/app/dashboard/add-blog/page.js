@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useAuth } from '@/context/AuthContext'
 
 export default function AddBlogPage() {
+  const { token } = useAuth()
   const [formData, setFormData] = useState({
     postTitle: '',
     urlSlug: '',
@@ -161,7 +163,11 @@ export default function AddBlogPage() {
           data.append(key, value)
         }
       })
-      const response = await fetch('/api/blog', { method: 'POST', body: data })
+      const response = await fetch('/api/blog', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: data
+      })
       let result = null
       try {
         result = await response.json()

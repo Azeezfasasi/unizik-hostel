@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { Save, Trash2, Plus, Upload } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 const defaultCoreValues = [
   {
@@ -62,6 +63,7 @@ const defaultOverview = {
 }
 
 export default function CompanyOverviewContent() {
+  const { token } = useAuth()
   const [overview, setOverview] = useState(defaultOverview)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -106,6 +108,7 @@ export default function CompanyOverviewContent() {
 
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: formDataForUpload
       })
 
@@ -142,7 +145,10 @@ export default function CompanyOverviewContent() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(overview)
       })
 

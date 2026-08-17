@@ -5,11 +5,13 @@ import Image from 'next/image';
 import { Upload, X, Save, ImageIcon } from 'lucide-react';
 import { uploadImageToCloudinary, deleteImageFromCloudinary } from '@/app/utils/galleryApi';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useAuth } from '@/context/AuthContext';
 import { notify } from '@/components/dashboard-component/ui/toast';
 import PageHeader from '@/components/dashboard-component/ui/PageHeader';
 import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton';
 
 function WebsiteLogoInner() {
+  const { token } = useAuth();
   const [logo, setLogo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -82,6 +84,7 @@ function WebsiteLogoInner() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             url: result.url,
@@ -118,6 +121,7 @@ function WebsiteLogoInner() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           id: logo._id,

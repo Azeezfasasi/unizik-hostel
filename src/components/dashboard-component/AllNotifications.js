@@ -17,8 +17,10 @@ import {
   Phone,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AllNotifications() {
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,10 +33,11 @@ export default function AllNotifications() {
     const fetchNotifications = async () => {
       setLoading(true);
       try {
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
         const [registrationRes, contactRes, donationsRes] = await Promise.all([
-          fetch('/api/joinus?status=pending&limit=50'),
-          fetch('/api/contact?status=pending&limit=50'),
-          fetch('/api/donations?status=pending&limit=50'),
+          fetch('/api/joinus?status=pending&limit=50', { headers: authHeaders }),
+          fetch('/api/contact?status=pending&limit=50', { headers: authHeaders }),
+          fetch('/api/donations?status=pending&limit=50', { headers: authHeaders }),
         ]);
 
         const registrationData = registrationRes.ok ? await registrationRes.json() : { data: [] };
@@ -87,7 +90,7 @@ export default function AllNotifications() {
     };
 
     fetchNotifications();
-  }, []);
+  }, [token]);
 
   // Filter notifications based on tab and search
   const filteredNotifications = notifications.filter(notif => {

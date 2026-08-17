@@ -8,7 +8,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 const ContactFormResponses = () => {
 	console.log('🎯 ContactFormResponses component mounted')
-	const { user } = useAuth();
+	const { user, token } = useAuth();
 
 	// Define state first
 	const [responses, setResponses] = useState([])
@@ -36,10 +36,12 @@ const ContactFormResponses = () => {
 			const url = `/api/contact?page=${currentPage}&limit=${responsesPerPage}${statusParam}`
 			console.log('📡 Fetching from:', url)
 			
-			const res = await fetch(url);
+			const res = await fetch(url, {
+				headers: token ? { Authorization: `Bearer ${token}` } : {},
+			});
 			const data = await res.json();
 			console.log('✅ API Response:', data)
-			
+
 			// API returns { success: true, data: [...], pagination: {...} }
 			if (data.success && Array.isArray(data.data)) {
 				console.log('📊 Setting responses:', data.data)
@@ -57,7 +59,7 @@ const ContactFormResponses = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [currentPage, statusFilter, responsesPerPage])
+	}, [currentPage, statusFilter, responsesPerPage, token])
 
 	// Define applyFilters before using it in useEffect
 	const applyFilters = useCallback((data, search, status) => {
@@ -148,7 +150,10 @@ const ContactFormResponses = () => {
 			console.log('Replying to contact ID:', selectedResponse?._id);
 			const res = await fetch(`/api/contact/${selectedResponse._id}`, {
 				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
 				body: JSON.stringify({ message: replyText, senderId: user._id }),
 			})
 			const data = await res.json()
@@ -168,7 +173,10 @@ const ContactFormResponses = () => {
 	// Delete response
 	const handleDelete = async () => {
 		try {
-			const res = await fetch(`/api/contact/${selectedResponse._id}`, { method: 'DELETE' })
+			const res = await fetch(`/api/contact/${selectedResponse._id}`, {
+				method: 'DELETE',
+				headers: { Authorization: `Bearer ${token}` },
+			})
 			const data = await res.json()
 			if (data.success) {
 				loadResponses()
@@ -193,7 +201,10 @@ const ContactFormResponses = () => {
 			console.log('Changing status for contact ID:', response?._id, 'New Status:', newStatus, 'Sender ID:', user._id);
 			const res = await fetch(`/api/contact/${response._id}`, {
 				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
 				body: JSON.stringify({ status: newStatus, senderId: user._id }),
 			})
 			const data = await res.json()

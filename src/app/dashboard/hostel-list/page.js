@@ -239,7 +239,7 @@ function EditModal({ hostel, isOpen, onClose, onSave, isSaving }) {
 
 // Main Component
 export default function HostelListPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, token } = useAuth();
   const [hostels, setHostels] = useState([]);
   const [filteredHostels, setFilteredHostels] = useState([]);
   const [campuses, setCampuses] = useState([]);
@@ -260,7 +260,9 @@ export default function HostelListPage() {
   const fetchHostels = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/hostel');
+      const res = await fetch('/api/hostel', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json();
       if (data.success) {
         setHostels(data.data);
@@ -273,7 +275,7 @@ export default function HostelListPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     fetchHostels();
@@ -310,7 +312,10 @@ export default function HostelListPage() {
       setIsSaving(true);
       const res = await fetch(`/api/hostel/${updatedHostel._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(updatedHostel),
       });
       const data = await res.json();
@@ -334,6 +339,7 @@ export default function HostelListPage() {
       setIsDeleting(true);
       const res = await fetch(`/api/hostel/${deleteModal.hostel._id}`, {
         method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {

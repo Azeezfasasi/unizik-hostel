@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { Building2, ShieldAlert, Loader2 } from 'lucide-react';
 import PageHeader from '@/components/dashboard-component/ui/PageHeader';
 import { notify } from '@/components/dashboard-component/ui/toast';
@@ -26,7 +27,9 @@ const COMMON_FACILITIES = [
 export default function AddHostelPage() {
   const router = useRouter();
   const { token, isAdmin } = useAuth();
+  const { campuses, loading: campusesLoading } = useCampus();
   const [loading, setLoading] = useState(false);
+  const [isNewCampus, setIsNewCampus] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -82,6 +85,20 @@ export default function AddHostelPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleCampusSelectChange = (e) => {
+    const value = e.target.value;
+    if (value === '__new__') {
+      setIsNewCampus(true);
+      setFormData(prev => ({ ...prev, hostelCampus: '' }));
+    } else {
+      setIsNewCampus(false);
+      setFormData(prev => ({ ...prev, hostelCampus: value }));
+    }
+    if (errors.hostelCampus) {
+      setErrors(prev => ({ ...prev, hostelCampus: '' }));
     }
   };
 
@@ -170,14 +187,33 @@ export default function AddHostelPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Campus <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="hostelCampus"
-                value={formData.hostelCampus}
-                onChange={handleInputChange}
-                placeholder="e.g., Main Campus"
+              <select
+                value={isNewCampus ? '__new__' : formData.hostelCampus}
+                onChange={handleCampusSelectChange}
+                disabled={campusesLoading}
                 className={inputClass('hostelCampus')}
-              />
+              >
+                <option value="">
+                  {campusesLoading ? 'Loading campuses...' : '-- Select Campus --'}
+                </option>
+                {campuses.map(campus => (
+                  <option key={campus} value={campus}>
+                    {campus}
+                  </option>
+                ))}
+                <option value="__new__">+ Add New Campus</option>
+              </select>
+              {isNewCampus && (
+                <input
+                  type="text"
+                  name="hostelCampus"
+                  value={formData.hostelCampus}
+                  onChange={handleInputChange}
+                  placeholder="Enter new campus name"
+                  className={`${inputClass('hostelCampus')} mt-2`}
+                  autoFocus
+                />
+              )}
               {errors.hostelCampus && (
                 <p className="text-red-500 text-xs mt-1">{errors.hostelCampus}</p>
               )}

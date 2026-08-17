@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, Edit2, Plus, Loader, Copy, Check, MapPin } from 'lucide-react';
 import { geocodeAddress } from '@/lib/geocoding';
 import MapPreview from '@/components/MapPreview';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ContactDetailsContent() {
+  const { token } = useAuth();
   const [contactDetails, setContactDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -112,7 +114,10 @@ export default function ContactDetailsContent() {
       
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(formData)
       });
 
@@ -142,7 +147,8 @@ export default function ContactDetailsContent() {
     try {
       setLoading(true);
       const response = await fetch(`/api/contactdetails/${contactDetails._id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const result = await response.json();

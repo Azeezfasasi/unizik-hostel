@@ -6,9 +6,11 @@ import { Edit2, Trash2, Eye, EyeOff, Search, Filter, ChevronLeft, ChevronRight }
 import Link from 'next/link'
 import { Commet } from "react-loading-indicators";
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useAuth } from '@/context/AuthContext'
 
 const ManageBlogPage = () => {
 	const router = useRouter()
+	const { token } = useAuth()
 	const [posts, setPosts] = useState([])
 	const [filteredPosts, setFilteredPosts] = useState([])
 	const [loading, setLoading] = useState(false)
@@ -97,7 +99,10 @@ const ManageBlogPage = () => {
 			try {
 				const res = await fetch(`/api/blog/${postId}`, {
 					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					},
 					body: JSON.stringify({ status: newStatus })
 				})
 				if (res.ok) {
@@ -108,7 +113,7 @@ const ManageBlogPage = () => {
 				console.error('Failed to change status:', error)
 			}
 		},
-		[]
+		[token]
 	)
 
 	const handleDeleteClick = (post) => {
@@ -119,7 +124,10 @@ const ManageBlogPage = () => {
 	const handleDeleteConfirm = async () => {
 		if (!postToDelete) return
 		try {
-			const res = await fetch(`/api/blog/${postToDelete._id}`, { method: 'DELETE' })
+			const res = await fetch(`/api/blog/${postToDelete._id}`, {
+				method: 'DELETE',
+				headers: { Authorization: `Bearer ${token}` }
+			})
 			if (res.ok) {
 				loadPosts()
 				setShowDeleteModal(false)

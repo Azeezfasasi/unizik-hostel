@@ -7,11 +7,13 @@ import Link from 'next/link'
 import Image from 'next/image'
 import axios from 'axios'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useAuth } from '@/context/AuthContext'
 
 function EditBlogContent() {
 	const router = useRouter()
 	const params = useParams()
 	const postId = params?.id
+	const { token } = useAuth()
 
 	const [formData, setFormData] = useState({
 		postTitle: '',
@@ -280,6 +282,7 @@ function EditBlogContent() {
 			await axios.put(`/api/blog/${postId}`, data, {
 				headers: {
 					'Content-Type': 'multipart/form-data',
+					Authorization: `Bearer ${token}`,
 				},
 			})
 

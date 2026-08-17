@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Save, ArrowUp, ArrowDown, MessageSquareQuote, Star } from 'lucide-react'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useAuth } from '@/context/AuthContext'
 import { notify } from '@/components/dashboard-component/ui/toast'
 import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal'
 import PageHeader from '@/components/dashboard-component/ui/PageHeader'
@@ -9,6 +10,7 @@ import EmptyState from '@/components/dashboard-component/ui/EmptyState'
 import { PageSpinner } from '@/components/dashboard-component/ui/Skeleton'
 
 function TestimonialContentInner() {
+  const { token } = useAuth()
   const [testimonials, setTestimonials] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -54,7 +56,10 @@ function TestimonialContentInner() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(testimonial)
       })
 
@@ -87,7 +92,10 @@ function TestimonialContentInner() {
     if (!deleteTarget?._id) return
     setDeleting(true)
     try {
-      const res = await fetch(`/api/testimonial/${deleteTarget._id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/testimonial/${deleteTarget._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const result = await res.json()
 
       if (result.success) {
@@ -134,7 +142,10 @@ function TestimonialContentInner() {
         try {
           await fetch(`/api/testimonial/${t._id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify(t)
           })
         } catch (err) {

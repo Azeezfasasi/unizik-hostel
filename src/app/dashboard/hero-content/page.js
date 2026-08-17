@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Eye, EyeOff, ArrowUpDown, Upload, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useAuth } from '@/context/AuthContext'
 import { notify } from '@/components/dashboard-component/ui/toast'
 import ConfirmModal from '@/components/dashboard-component/ui/ConfirmModal'
 import PageHeader from '@/components/dashboard-component/ui/PageHeader'
@@ -10,6 +11,7 @@ import EmptyState from '@/components/dashboard-component/ui/EmptyState'
 import { TableSkeleton } from '@/components/dashboard-component/ui/Skeleton'
 
 function HeroContentInner() {
+  const { token } = useAuth()
   const [slides, setSlides] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -61,6 +63,7 @@ function HeroContentInner() {
 
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: formDataForUpload
       })
 
@@ -122,7 +125,10 @@ function HeroContentInner() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(formData)
       })
 
@@ -157,7 +163,10 @@ function HeroContentInner() {
     if (!deleteTarget) return
     setDeleting(true)
     try {
-      const res = await fetch(`/api/hero/${deleteTarget._id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/hero/${deleteTarget._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const result = await res.json()
 
       if (result.success) {
@@ -179,7 +188,10 @@ function HeroContentInner() {
     try {
       const res = await fetch(`/api/hero/${slide._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ isActive: !slide.isActive })
       })
 
@@ -197,7 +209,10 @@ function HeroContentInner() {
     try {
       const res = await fetch(`/api/hero/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ order: newOrder })
       })
 
